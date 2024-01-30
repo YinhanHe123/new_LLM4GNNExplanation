@@ -1,0 +1,1 @@
+Database of marketed drugs and adverse drug reactions (ADR), grouped into 27 system organ classes. The graph labels are accoriding to the molecule's relation to Hepatobiliary disorders.
