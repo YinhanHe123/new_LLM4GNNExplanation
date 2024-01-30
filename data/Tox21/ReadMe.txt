@@ -1,0 +1,1 @@
+ Qualitative toxicity measurements on 12 biological targets, including nuclear receptors and stress response pathways. the graph labels are according to the NR-PPAR-gamma.
