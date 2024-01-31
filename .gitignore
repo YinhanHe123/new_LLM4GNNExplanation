@@ -1,0 +1,7 @@
+*__pycache__/
+*test.ipynb
+*.vscode/
+wandb/
+*dataset/
+*.pth
+*.pickle
