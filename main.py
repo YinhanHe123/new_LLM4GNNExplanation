@@ -7,7 +7,7 @@ from transformers import AutoModel, AutoConfig, AutoTokenizer
 from utils.pre_defined import *
 from utils.smiles import *
 from utils.datasets import Dataset
-from model.gnn import GCN
+from model.gnn import GCN, Graph_pred_model
 from model.explainer import GraphTextClipModel
 from model.model_utils import *
 
@@ -61,7 +61,8 @@ def main():
     explainer_train_loader, _, _ =  dataset.get_dataloaders(4, data_split, mask_pos = True)
     
     # Get ground truth GNN
-    gnn = GCN(num_classes=2, num_features=args.num_atom_types, embedding_dim=128, device=args.device).to(args.device)
+    # gnn = GCN(num_classes=2, num_features=args.num_atom_types, embedding_dim=128, device=args.device).to(args.device)
+    gnn = Graph_pred_model(95, 32, 2, 4, dataset.max_num_nodes, args.device)
     gnn_path = './saved_models/gnn_'+args.dataset+'.pth'
     if os.path.isfile(gnn_path):
         gnn.load_state_dict(torch.load(gnn_path))

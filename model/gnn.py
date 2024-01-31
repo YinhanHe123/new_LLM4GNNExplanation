@@ -75,7 +75,7 @@ class DenseGATConv(nn.Module):
         self.lin_root.reset_parameters()
         self.lin_edge.reset_parameters()
 
-    def forward(self, x, adj, edge_attr, mask=None, from_onehot=False):
+    def forward(self, x, adj, edge_attr, mask=None, from_onehot=True):
         if not from_onehot:
             edge_attr = F.one_hot(edge_attr.long().squeeze(-1), num_classes=self.edge_attr_dim).float()
         
@@ -92,7 +92,7 @@ class DenseGATConv(nn.Module):
 
         if self.aggr == 'mean':
             out = out / adj.sum(dim=-1, keepdim=True).clamp_(min=1)
-
+        
         out = self.lin_rel(out)
         out += self.lin_root(x)
 
@@ -154,4 +154,43 @@ class GCN(nn.Module):
         x = x.sum(dim=1) / mask_count  
         return x
     
-    # edge_attr: [batch_size, max_num_edges, 3]
+class Graph_pred_model(nn.Module):
+    def __init__(self, x_dim, h_dim, n_out, num_edge_attr, max_num_nodes, device):
+        super(Graph_pred_model, self).__init__()
+        self.num_graph_models = 3
+        self.device = device
+        self.graph_model = nn.ModuleList([DenseGATConv(x_dim, h_dim, num_edge_attr).to(device) for i in range(self.num_graph_models)])
+        self.encoder = nn.Sequential(nn.Linear(2 * h_dim, h_dim), nn.ReLU())
+        self.predictor = nn.Sequential(nn.Linear(h_dim, n_out))
+        self.max_num_nodes = max_num_nodes
+        self.mask = torch.nn.Parameter(torch.ones(max_num_nodes), requires_grad=True)
+        self.register_parameter("mask", self.mask)
+        self.nuM_edge_attr = num_edge_attr
+
+    def graph_pooling(self, x, type='mean', mask=None):
+        if mask is not None:
+            mask_feat = mask.unsqueeze(-1).repeat(1,1,x.shape[-1])  # batchsize x max_num_node x dim_z
+            x = x * mask_feat
+        if type == 'max':
+            out, _ = torch.max(x, dim=1, keepdim=False)  # dim: the dimension of num_node
+        elif type == 'sum':
+            out = torch.sum(x, dim=1, keepdim=False)
+        elif type == 'mean':
+            out = torch.mean(x, dim=1, keepdim=False)
+        return out
+
+    def forward(self, data):
+        x, adj, mask, edge_attr = data['x'].to(self.device), data['adj'].to(self.device), \
+                                  data['mask'].to(self.device), data['edge_attr'].to(self.device)
+        rep_graphs = []
+        for i in range(self.num_graph_models):
+            rep = self.graph_model[i](x, adj, edge_attr, mask=mask)  # n x num_node x h_dim
+            graph_rep = torch.cat([self.graph_pooling(rep, 'mean', mask=mask), self.graph_pooling(rep, 'max', mask=mask)], dim=-1)
+            graph_rep = self.encoder(graph_rep)  # n x h_dim
+            rep_graphs.append(graph_rep.unsqueeze(0))  # [1 x n x h_dim]
+
+        rep_graph_agg = torch.cat(rep_graphs, dim=0)
+        rep_graph_agg = torch.mean(rep_graph_agg, dim=0)  # n x h_dim
+
+        y_pred = F.log_softmax(self.predictor(rep_graph_agg), dim=1) # n x num_class
+        return {'y_pred': y_pred, 'rep_graph': rep_graph_agg}

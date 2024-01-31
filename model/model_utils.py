@@ -86,7 +86,7 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
             labels = batch['label'].to(args.device)
             optimizer.zero_grad()
             out = gnn(batch)
-            loss = F.nll_loss(out,labels.long())
+            loss = F.nll_loss(out['y_pred'],labels.long())
             loss.backward()
             optimizer.step()
             
