@@ -75,7 +75,7 @@ class DenseGATConv(nn.Module):
         self.lin_root.reset_parameters()
         self.lin_edge.reset_parameters()
 
-    def forward(self, x, adj, edge_attr, mask=None, from_onehot=True):
+    def forward(self, x, adj, edge_attr, mask=None, from_onehot=False):
         if not from_onehot:
             edge_attr = F.one_hot(edge_attr.long().squeeze(-1), num_classes=self.edge_attr_dim).float()
         
@@ -105,67 +105,16 @@ class DenseGATConv(nn.Module):
         return (f'{self.__class__.__name__}({self.in_channels}, '
                 f'{self.out_channels}, edge_attr_dim={self.edge_attr_dim})')
 
+    
 class GCN(nn.Module):
-    def __init__(self, num_features, num_classes, embedding_dim, device):
+    def __init__(self, num_features, embedding_dim, num_classes, num_edge_attr, device, num_graph_models=3):
         super(GCN, self).__init__()
+        self.num_graph_models = num_graph_models
+        self.device = device
+        self.graph_model = nn.ModuleList([DenseGATConv(num_features, embedding_dim, num_edge_attr).to(device) for i in range(self.num_graph_models)])
+        self.encoder = nn.Sequential(nn.Linear(2 * embedding_dim, embedding_dim), nn.ReLU()).to(device)
+        self.predictor = nn.Sequential(nn.Linear(embedding_dim, num_classes)).to(device)
         self.num_features = num_features
-        self.embedding = nn.Linear(num_features, embedding_dim)
-        self.conv1 = DenseGATConv(embedding_dim, 32, 4)
-        self.conv2 = DenseGATConv(32, 16, 4)
-        self.fc = nn.Linear(16, num_classes) 
-        self.device = device
-
-    def forward(self, data, use_softmax=True, from_onehot=False):
-        x, adj, mask, edge_attr = data['x'].to(self.device), data['adj'].to(self.device), \
-                                  data['mask'].to(self.device), data['edge_attr'].to(self.device)
-        if not from_onehot:
-            x = F.one_hot(x.long().squeeze(-1), num_classes=self.num_features).float()
-        
-        x = self.embedding(x.float())
-        x = F.relu(self.conv1(x, adj, edge_attr, mask=mask))
-        x = F.relu(self.conv2(x, adj, edge_attr, mask=mask))
-
-        mask_count = mask.sum(dim=1, keepdim=True)
-        mask = mask.unsqueeze(-1)
-        x = x * mask
-        
-        x = x.sum(dim=1) / mask_count
-        x = F.dropout(x, p=0.1, training=self.training)
-        x = self.fc(x)
-        if use_softmax:
-            return F.log_softmax(x, dim=1)
-        else:
-            return x
-    
-    def forward_emb(self, data, from_onehot=False):
-        x, adj, mask, edge_attr = data['x'].to(self.device), data['adj'].to(self.device), \
-                                  data['mask'].to(self.device), data['edge_attr'].to(self.device)
-        if not from_onehot:
-            x = F.one_hot(x.long().squeeze(-1), num_classes=self.num_features).float()
-        
-        x = self.embedding(x.float())
-        x = F.relu(self.conv1(x, adj, edge_attr, mask=mask))
-        x = F.relu(self.conv2(x, adj, edge_attr, mask=mask))
-        
-        mask_count = mask.sum(dim=1, keepdim=True)
-        mask = mask.unsqueeze(-1)
-        x = x * mask
-        
-        x = x.sum(dim=1) / mask_count  
-        return x
-    
-class Graph_pred_model(nn.Module):
-    def __init__(self, x_dim, h_dim, n_out, num_edge_attr, max_num_nodes, device):
-        super(Graph_pred_model, self).__init__()
-        self.num_graph_models = 3
-        self.device = device
-        self.graph_model = nn.ModuleList([DenseGATConv(x_dim, h_dim, num_edge_attr).to(device) for i in range(self.num_graph_models)])
-        self.encoder = nn.Sequential(nn.Linear(2 * h_dim, h_dim), nn.ReLU())
-        self.predictor = nn.Sequential(nn.Linear(h_dim, n_out))
-        self.max_num_nodes = max_num_nodes
-        self.mask = torch.nn.Parameter(torch.ones(max_num_nodes), requires_grad=True)
-        self.register_parameter("mask", self.mask)
-        self.nuM_edge_attr = num_edge_attr
 
     def graph_pooling(self, x, type='mean', mask=None):
         if mask is not None:
@@ -179,9 +128,12 @@ class Graph_pred_model(nn.Module):
             out = torch.mean(x, dim=1, keepdim=False)
         return out
 
-    def forward(self, data):
+    def forward(self, data, from_onehot=False):
         x, adj, mask, edge_attr = data['x'].to(self.device), data['adj'].to(self.device), \
                                   data['mask'].to(self.device), data['edge_attr'].to(self.device)
+        if not from_onehot:
+            x = F.one_hot(x.long().squeeze(-1), num_classes=self.num_features).float()
+        
         rep_graphs = []
         for i in range(self.num_graph_models):
             rep = self.graph_model[i](x, adj, edge_attr, mask=mask)  # n x num_node x h_dim

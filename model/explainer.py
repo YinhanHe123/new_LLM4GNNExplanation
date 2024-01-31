@@ -20,7 +20,7 @@ class DualModelOutput(ModelOutput):
         )
 
 class GraphTextClipModel(PreTrainedModel):
-    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, num_atom_types=len(NODE_LABEL_MAP), 
+    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, num_atom_types=len(NODE_LABEL_MAP)-1, 
                  emb_dim=768, graph_emb_dim=16, tokenizer=None):
         '''
         @text_encoder: Bert, etc.
@@ -43,9 +43,11 @@ class GraphTextClipModel(PreTrainedModel):
         self.dropout = nn.Dropout(self.dropout_value)
         self.logit_scale = nn.Parameter(torch.ones([]) * 1).to(args.device)
         self.transform = nn.Linear(emb_dim, graph_emb_dim)
+
+        self._device = args.device
          
         self.decoder_adj = nn.Sequential(
-            nn.Linear(16, self.h_dim), 
+            nn.Linear(args.gnn_embedding_dim, self.h_dim), 
             nn.BatchNorm1d(self.h_dim), 
             nn.Dropout(self.dropout_value), 
             nn.ReLU(),
@@ -58,7 +60,7 @@ class GraphTextClipModel(PreTrainedModel):
         ).to(args.device)
 
         self.decoder_edge = nn.Sequential(
-            nn.Linear(16, self.h_dim), 
+            nn.Linear(args.gnn_embedding_dim, self.h_dim), 
             nn.BatchNorm1d(self.h_dim), 
             nn.Dropout(self.dropout_value), 
             nn.ReLU(),
@@ -71,7 +73,7 @@ class GraphTextClipModel(PreTrainedModel):
         ).to(args.device)
         
         self.decoder_x = nn.Sequential(
-            nn.Linear(16, self.h_dim),
+            nn.Linear(args.gnn_embedding_dim, self.h_dim),
             nn.BatchNorm1d(self.h_dim),
             nn.Dropout(self.dropout_value),
             nn.ReLU(),
@@ -110,7 +112,7 @@ class GraphTextClipModel(PreTrainedModel):
     def generate_smiles(self, adj_reconst: torch.Tensor, edge_reconst: torch.Tensor, x_reconst: torch.Tensor) -> List[str]:
         smiles = []
         for x, adj_matrix, edge_matrix in zip(x_reconst, adj_reconst, edge_reconst):
-            mask = torch.BoolTensor([True] * x.size()[-1])
+            mask = torch.BoolTensor([True] * x.size()[0])
             smiles.append(graph_to_smiles(x, adj_matrix, edge_matrix, mask))
         return smiles
         
@@ -128,7 +130,7 @@ class GraphTextClipModel(PreTrainedModel):
         text_emb = text_emb.last_hidden_state[:, 0, :]
         text_emb = self.dropout(text_emb) 
         text_emb = self.transform(text_emb)       
-        graph_emb = self.graph_encoder.forward_emb(batch)
+        graph_emb = self.graph_encoder(batch)['rep_graph']
         # norm
         text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)
         graph_emb = graph_emb / graph_emb.norm(dim=-1, keepdim=True)
@@ -154,20 +156,19 @@ class GraphTextClipModel(PreTrainedModel):
         similarity_loss = -F.cosine_similarity(adj_reconst * edge_reconst, adj * edge_attr).abs().mean()\
                           -F.cosine_similarity(one_hot_x, x_reconst).abs().mean()
         
-        desired_label = (1 - batch['label'].float()).long()
+        desired_label = (1 - batch['label'].float()).long().to(self.device)
         new_mask = torch.ones(len(batch['x']), self.max_num_nodes, dtype=torch.bool, requires_grad=False)
         new_batch = {'x': x_reconst, 'adj': adj_reconst, 'edge_attr': edge_reconst, 'mask': new_mask}
         
-        ground_truth_label = self.graph_encoder(new_batch, use_softmax=False, from_onehot=True)
-        conterfactual_loss = F.cross_entropy(ground_truth_label, desired_label)
-        ground_truth_label = F.softmax(ground_truth_label, dim=1)
+        ground_truth_prediction = torch.exp(self.graph_encoder(new_batch, from_onehot=True)['y_pred'])
+        conterfactual_loss = F.cross_entropy(ground_truth_prediction, desired_label)
 
-        return self.m_mu * similarity_loss + self.c_mu * conterfactual_loss, ground_truth_label[:, 1]
+        return self.m_mu * similarity_loss + self.c_mu * conterfactual_loss, ground_truth_prediction[:, 1]
     
     def forward_CF(self, batch, CF_text, return_loss=False):
         CF_text = self.tokenizer(CF_text, padding=True, truncation=True, return_tensors='pt').to(self.device)
         CF_emb = self.text_encoder(**CF_text).last_hidden_state[:, 0, :]
-        CF_emb = self.graph_encoder.forward_emb(batch) + self.transform(CF_emb)
+        CF_emb = self.graph_encoder(batch)['rep_graph'] + self.transform(CF_emb)
         CF_emb = CF_emb / CF_emb.norm(dim=-1, keepdim=True)
         
         adj_reconst = self.decoder_adj(CF_emb)

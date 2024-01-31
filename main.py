@@ -1,13 +1,12 @@
 import torch
 import argparse
-from tqdm import tqdm
 import os
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 
 from utils.pre_defined import *
 from utils.smiles import *
 from utils.datasets import Dataset
-from model.gnn import GCN, Graph_pred_model
+from model.gnn import GCN
 from model.explainer import GraphTextClipModel
 from model.model_utils import *
 
@@ -27,12 +26,13 @@ def parse_llm_gce_args():
     
     # GNN args
     parser.add_argument("-ge", "--gnn_epochs", default=100, type=int)
-    parser.add_argument("-glr", "--gnn_lr", default=0.01, type=float, help='GNN model learning rate')
+    parser.add_argument("-glr", "--gnn_lr", default=1e-3, type=float, help='GNN model learning rate')
+    parser.add_argument('-ged', "--gnn_embedding_dim", default=32, type=int, help='GNN model embedding dim')
     parser.add_argument("-gwd", "--gnn_weight_decay", default=0.001, type=float, help='GNN model weight decay')
 
     # Autoencoder args
     parser.add_argument("-lmm", "--lm_model", default="Bert", type=str, help='LM model used in the autoencoder')
-    parser.add_argument("-hd", "--h_dim", default=512, type=int, help='autoencoder hidden dime')
+    parser.add_argument("-hd", "--h_dim", default=512, type=int, help='autoencoder hidden dim')
     parser.add_argument("-mcl", "--max_context_length", default=4096, type=int, help='max context length')
     parser.add_argument("-mm", "--m_mu", default=1.0, type=float)
     parser.add_argument("-cm", "--c_mu", default=0.5, type=float)
@@ -62,15 +62,20 @@ def main():
     
     # Get ground truth GNN
     # gnn = GCN(num_classes=2, num_features=args.num_atom_types, embedding_dim=128, device=args.device).to(args.device)
-    gnn = Graph_pred_model(95, 32, 2, 4, dataset.max_num_nodes, args.device)
+    # num_features, embedding_dim, num_classes, num_edge_attr, device, num_graph_models=3):
+    gnn = GCN(num_features=args.num_atom_types-1, embedding_dim=args.gnn_embedding_dim, num_classes=2, num_edge_attr=4, device=args.device)
     gnn_path = './saved_models/gnn_'+args.dataset+'.pth'
     if os.path.isfile(gnn_path):
+        print('----------------------Loading GT-GNN----------------------\n')
         gnn.load_state_dict(torch.load(gnn_path))
+        print('----------------------GT-GNN Loaded----------------------\n')
     else:
+        print('----------------------Training GT-GNN----------------------\n')
         gnn = train_gnn(args, gnn, gnn_train_loader, gnn_val_loader)
         test_gnn(gnn, gnn_test_loader)
         torch.save(gnn.state_dict(), gnn_path)
         print('gnn model saved to {}'.format(gnn_path))
+        print('----------------------GT-GNN Saved----------------------\n')
     gnn.eval()
 
     # Load autoencoder
@@ -80,17 +85,22 @@ def main():
             lmconfig=AutoConfig.from_pretrained(MODEL_PRETRAIN_MAP[args.lm_model]),
             graph_encoder=gnn,
             args=args,
+            graph_emb_dim=args.gnn_embedding_dim,
             max_num_nodes=dataset.max_num_nodes,
         ).to(args.device)
     
     # pretrain
     if args.ablation_type != "np":
-        pretrain_lm_path = './LMs/SavedPretrainedLMs/'+args.dataset+'.pth'
+        pretrain_lm_path = './saved_models/'+args.dataset+'.pth'
         if os.path.isfile(pretrain_lm_path):
+            print('----------------------Loading Pretrained LM----------------------\n')
             explainer.load_state_dict(torch.load(pretrain_lm_path))
+            print('----------------------Pretrained LM Loaded----------------------\n')
         else:
+            print('----------------------Training Pretrained LM----------------------\n')
             explainer = pretrain_autoencoder(args, explainer, pretrain_train_loader, pretrain_val_loader)
             torch.save(explainer.state_dict(), pretrain_lm_path)
+            print('----------------------Pretrained LM Saved----------------------\n')
 
     # training
     explainer, final_outputs = train_autoencoder(args, explainer, explainer_train_loader)

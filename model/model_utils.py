@@ -86,7 +86,8 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
             labels = batch['label'].to(args.device)
             optimizer.zero_grad()
             out = gnn(batch)
-            loss = F.nll_loss(out['y_pred'],labels.long())
+            out = out['y_pred']
+            loss = F.nll_loss(out,labels.long())
             loss.backward()
             optimizer.step()
             
@@ -96,17 +97,18 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
         if epoch % 10 == 0:
             with torch.no_grad():
                 train_loss /= len(gnn_train_loader)
-                train_acc /= len(gnn_train_loader.dataset)
+                train_acc /= len(gnn_train_loader.sampler)
                 
                 eval_loss = 0
                 eval_acc = 0
                 for batch in gnn_val_loader:
                     labels = batch['label'].to(args.device)
                     out = gnn(batch)
+                    out = out['y_pred']
                     eval_loss += F.nll_loss(out,labels.long()).item()
                     eval_acc += (out.argmax(dim=1) == labels).sum().item()
                 eval_loss /= len(gnn_val_loader)
-                eval_acc /= len(gnn_val_loader.dataset)
+                eval_acc /= len(gnn_val_loader.sampler)
                 
             time_checkpoint = time.time()
             time_comsumed = time_checkpoint - gnn_start_train_time
@@ -120,10 +122,11 @@ def test_gnn(gnn, gnn_test_loader):
     for batch in gnn_test_loader:
         labels = batch['label'].to(gnn.device)
         out = gnn(batch)
+        out = out['y_pred']
         test_loss += F.nll_loss(out,labels.long()).item()
         test_acc += (out.argmax(dim=1) == labels).sum().item()
     test_loss /= len(gnn_test_loader)
-    test_acc /= len(gnn_test_loader.dataset)
+    test_acc /= len(gnn_test_loader.sampler)
     print(f'test_loss: {test_loss} | test_acc : {test_acc}')
 
 def pretrain_autoencoder(args, autoencoder, train_loader, val_loader):
@@ -135,7 +138,7 @@ def pretrain_autoencoder(args, autoencoder, train_loader, val_loader):
     
     for epoch in range(args.exp_pretrain_epochs):
         train_loss = 0
-        for batch in tqdm(train_loader):
+        for batch in train_loader:
             optimizer.zero_grad()
             outputs = autoencoder.forward_clip(batch, return_loss=True)
             loss = outputs['loss']
@@ -152,7 +155,8 @@ def pretrain_autoencoder(args, autoencoder, train_loader, val_loader):
                     loss = outputs['loss']
                     eval_loss += loss
                 eval_loss /= len(val_loader)
-            print(f'epoch: {epoch} | train_loss: {train_loss} | eval_loss: {eval_loss}')
+            print(f'pretrain epoch: {epoch} | train_loss: {train_loss} | eval_loss: {eval_loss}')
+    return autoencoder
 
 def train_autoencoder(args, autoencoder, train_loader):
     final_outputs = []
@@ -170,6 +174,7 @@ def train_autoencoder(args, autoencoder, train_loader):
         train_steps_in_one_feedback = 1 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
         train_loss = 0
         for batch in tqdm(train_loader):
+            conversations = [Conversation(cf_query) for cf_query in batch['cf_query']]
             for _ in range(feedback_times):
                 conversations = get_responses(conversations) # get CF responses
                 CF_text = get_CF_text(conversations)

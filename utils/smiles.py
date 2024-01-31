@@ -19,14 +19,14 @@ def graph_to_smiles(x, adj_matrix, edge_attr_matrix, mask):
     node_idx_map = {}
     for idx, node in enumerate(x):
         if mask[idx]:
-            a = Chem.Atom(NODE_LABEL_MAP[node[0]])
+            a = Chem.Atom(NODE_LABEL_MAP[int(node[0].item())+1])
             mol_idx = mol.AddAtom(a)
             node_idx_map[idx] = mol_idx
     edge_idxs = torch.nonzero(adj_matrix)
     for edge_idx in edge_idxs:
         if edge_idx[0] < edge_idx[1]:
             i, j = edge_idx[0].item(), edge_idx[1].item()
-            mol.AddBond(node_idx_map[i], node_idx_map[j], EDGE_LABEL_MAP[edge_attr_matrix[i,j].item()])
+            mol.AddBond(node_idx_map[i], node_idx_map[j], EDGE_LABEL_MAP[int(edge_attr_matrix[i,j].item()+1)])
     return Chem.MolToSmiles(mol.GetMol()) 
 
 def smiles_to_graph(smiles, max_nodes=None):
