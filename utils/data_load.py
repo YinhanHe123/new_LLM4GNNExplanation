@@ -83,9 +83,10 @@ def get_graphs_from_data(edges, graph_idxs, graph_labels, link_labels, node_labe
             adj_matrix[j,i] = 1
             edge_attr_matrix[i,j] = link_labels[edge_idx]
             edge_attr_matrix[j,i] = link_labels[edge_idx]
-        
+
         node_attrs = [[node_labels[node_idx]] for node_idx in graph_nodes_idxs]
         node_attrs.extend([[0] for _ in range(max_num_nodes - len(graph_nodes_idxs))])
+        node_attrs = torch.Tensor(node_attrs)
 
         mask = torch.BoolTensor([True] * len(graph_nodes_idxs) + [False] * (max_num_nodes - len(graph_nodes_idxs)))
         
@@ -95,15 +96,32 @@ def get_graphs_from_data(edges, graph_idxs, graph_labels, link_labels, node_labe
 
 def get_graphs_from_smiles(smiles, graph_labels):
     graphs = []
+    max_nodes = 0
     for idx, smile_str in enumerate(smiles):
         node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str)
+        if len(node_attrs) > max_nodes:
+            max_nodes = len(node_attrs)
         graphs.append({"x" : node_attrs, "adj_matrix": adj_matrix, "edge_attr_matrix": edge_attr_matrix, \
                        'graph_label': graph_labels[idx], 'mask': mask, 'num_nodes': torch.sum(mask).item()})
+    for idx in range(len(graphs)):
+        cur_num_nodes = len(graphs[idx]['x'])
+        graphs[idx]['x'] = torch.cat((graphs[idx]['x'], torch.Tensor([[0] for _ in range (max_nodes - cur_num_nodes)]))) 
+        
+        adj_matrix = torch.zeros((max_nodes, max_nodes), dtype=torch.float)
+        edge_matrix = torch.zeros((max_nodes, max_nodes), dtype=torch.float)
+        adj_matrix[0:cur_num_nodes, 0:cur_num_nodes] = graphs[idx]['adj_matrix']
+        edge_matrix[0:cur_num_nodes, 0:cur_num_nodes] = graphs[idx]['edge_attr_matrix']
+        graphs[idx]['adj_matrix'] = adj_matrix
+        graphs[idx]['edge_attr_matrix'] = edge_matrix
 
-def get_text_attrs(graphs, dataset):
+        graphs[idx]['mask'] = torch.cat((graphs[idx]['mask'], torch.BoolTensor([False] * max_nodes - cur_num_nodes)))
+    return graphs, max_nodes
+
+def get_text_attrs(graphs, dataset, smiles_list=None):
     if not os.path.isfile(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_output.csv'):
-        smiles_list = [graph_to_smiles(graph['x'], graph['adj_matrix'], graph['edge_attr_matrix'], \
-                                       graph['mask']) for graph in graphs]
+        if smiles_list == None:
+            smiles_list = [graph_to_smiles(graph['x'], graph['adj_matrix'], graph['edge_attr_matrix'], \
+                                           graph['mask']) for graph in graphs]
         writer = csv.writer(open(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_output.csv', 'w'))
         for smile in tqdm(smiles_list):
             message, completion, prompt = get_description(smile, dataset)

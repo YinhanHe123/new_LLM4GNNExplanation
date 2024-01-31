@@ -29,10 +29,14 @@ def graph_to_smiles(x, adj_matrix, edge_attr_matrix, mask):
             mol.AddBond(node_idx_map[i], node_idx_map[j], EDGE_LABEL_MAP[edge_attr_matrix[i,j].item()])
     return Chem.MolToSmiles(mol.GetMol()) 
 
-def smiles_to_graph(smiles, max_nodes):
+def smiles_to_graph(smiles, max_nodes=None):
     mol = Chem.MolFromSmiles(smiles)
+    mol = Chem.AddHs(mol)
+    mol = Chem.Kekulize(mol)
     AllChem.EmbedMolecule(mol)
-    AllChem.UFFOptimizeMolecule(mol)
+
+    if max_nodes == None:
+        max_nodes = mol.GetNumAtoms()
 
     inverted_node_map = {sym:num for num, sym in NODE_LABEL_MAP.items()}
     inverted_edge_map = {bond_type:num for num, bond_type in EDGE_LABEL_MAP.items()}
@@ -52,6 +56,6 @@ def smiles_to_graph(smiles, max_nodes):
         edge_attr_matrix[i,j] = inverted_edge_map[bond.GetBondType()]
         edge_attr_matrix[j, i] = inverted_edge_map[bond.GetBondType()]
     
-    mask = torch.BoolTensor([True] * mol.GetNumAtoms() +\
-                                [False] * (max_nodes - mol.GetNumAtoms()))
+    mask = torch.BoolTensor([True] * mol.GetNumAtoms() + [False] * (max_nodes - mol.GetNumAtoms()))
+    
     return atom_features, adjacency_matrix, edge_attr_matrix, mask

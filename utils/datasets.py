@@ -7,7 +7,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import re
 
 class Dataset(BaseDataset):
-    def __init__(self, dataset):
+    def __init__(self, dataset, generate_text = True):
         self.dataset = dataset
         if dataset in ['AIDS', 'Mutagenicity']:
             # load graph data
@@ -17,18 +17,24 @@ class Dataset(BaseDataset):
             # converts graph data into a list of maps with the keys: "x", "adj_matrix", "edge_attr_matrix", 'graph_label', 'mask'
             self.graphs = get_graphs_from_data(edges, graph_idxs, self.graph_labels, \
                                     link_labels, node_labels, self.max_num_nodes)
-            # load text data
-            data_csv = get_text_attrs(self.graphs, dataset)
-            self.text_attrs = data_csv['captions'].values.tolist()
-            self.smiles = data_csv['SMILES'].values.tolist()
-
+            if generate_text:
+                # load text data
+                data_csv = get_text_attrs(self.graphs, dataset)
+                self.text_attrs = data_csv['captions'].values.tolist()
+                self.smiles = data_csv['SMILES'].values.tolist()
+            else:
+                self.text_attrs = None
+                self.smiles = [graph_to_smiles(graph['x'], graph['adj_matrix'], graph['edge_attr_matrix'], \
+                                               graph['mask']) for graph in self.graphs]
         elif dataset in ['BBBP', 'SIDER', 'Tox21']:
             self.smiles, self.graph_labels = preprocess_smiles_data(dataset)
-            self.graphs = get_graphs_from_smiles(self.smiles, self.graph_labels)
+            self.graphs, self.max_num_nodes = get_graphs_from_smiles(self.smiles, self.graph_labels)
             
-            data_csv = get_text_attrs(self.graphs, dataset)
-            self.text_attrs = data_csv['captions'].values.tolist()
-
+            if generate_text:
+                data_csv = get_text_attrs(self.graphs, dataset, self.smiles)
+                self.text_attrs = data_csv['captions'].values.tolist()
+            else:
+                self.text_attrs = None
         else:
             raise NotImplementedError
         
@@ -80,7 +86,7 @@ class Dataset(BaseDataset):
         key_component, caption_to_be_revised = self.get_key_conponent(self.text_attrs[graph_idx])
         
         return {
-            'x': torch.tensor(graph['x'], dtype=torch.float),
+            'x': graph['x'],
             'edge_attr': graph['edge_attr_matrix'],
             'adj': graph['adj_matrix'],
             'mask': graph['mask'],

@@ -27,8 +27,8 @@ def parse_llm_gce_args():
     
     # GNN args
     parser.add_argument("-ge", "--gnn_epochs", default=100, type=int)
-    parser.add_argument("-glr", "--gnn_lr", default=0.005, type=float, help='GNN model learning rate')
-    parser.add_argument("-gwd", "--gnn_weight_decay", default=0.01, type=float, help='GNN model weight decay')
+    parser.add_argument("-glr", "--gnn_lr", default=0.01, type=float, help='GNN model learning rate')
+    parser.add_argument("-gwd", "--gnn_weight_decay", default=0.001, type=float, help='GNN model weight decay')
 
     # Autoencoder args
     parser.add_argument("-lmm", "--lm_model", default="Bert", type=str, help='LM model used in the autoencoder')
