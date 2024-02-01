@@ -20,7 +20,7 @@ class DualModelOutput(ModelOutput):
         )
 
 class GraphTextClipModel(PreTrainedModel):
-    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, num_atom_types=len(NODE_LABEL_MAP)-1, 
+    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, num_atom_types=len(NODE_LABEL_MAP['AIDS']), 
                  emb_dim=768, graph_emb_dim=16, tokenizer=None):
         '''
         @text_encoder: Bert, etc.
@@ -29,7 +29,7 @@ class GraphTextClipModel(PreTrainedModel):
         super().__init__(lmconfig) 
         self.max_num_nodes = max_num_nodes
         self.num_atom_types = num_atom_types
-        self.dropout_value = 0.1
+        self.dropout_value = args.exp_dropout
         self.h_dim = args.h_dim
         self.max_context_length = args.max_context_length
         self.m_mu = args.m_mu
@@ -109,11 +109,12 @@ class GraphTextClipModel(PreTrainedModel):
         for param in self.graph_encoder.parameters():
             param.requires_grad = False
     
-    def generate_smiles(self, adj_reconst: torch.Tensor, edge_reconst: torch.Tensor, x_reconst: torch.Tensor) -> List[str]:
+    def generate_smiles(self, adj_reconst: torch.Tensor, edge_reconst: torch.Tensor, x_reconst: torch.Tensor, dataset:str) -> List[str]:
         smiles = []
         for x, adj_matrix, edge_matrix in zip(x_reconst, adj_reconst, edge_reconst):
             mask = torch.BoolTensor([True] * x.size()[0])
-            smiles.append(graph_to_smiles(x, adj_matrix, edge_matrix, mask))
+            adj_matrix = adj_matrix * (1 - torch.eye(adj_matrix.shape[0])).to(adj_matrix.device)
+            smiles.append(graph_to_smiles(x, adj_matrix, edge_matrix, mask, dataset))
         return smiles
         
     def contrastive_loss(self, logits: torch.Tensor) -> torch.Tensor:
@@ -191,7 +192,7 @@ class GraphTextClipModel(PreTrainedModel):
             loss = torch.tensor(0.0)
 
         SMILES = self.generate_smiles(adj_reconst=adj_reconst, edge_reconst=edge_reconst, 
-                                      x_reconst=torch.argmax(x_reconst, dim=-1, keepdim=True))
+                                      x_reconst=torch.argmax(x_reconst, dim=-1, keepdim=True), dataset=batch['dataset'][0])
         
         return DualModelOutput(loss=loss, adj_reconst=adj_reconst, SMILES=SMILES, 
-                               true_prob=true_prob.detach().numpy().tolist())
+                               true_prob=true_prob.detach().cpu().numpy().tolist())

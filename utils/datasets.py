@@ -9,28 +9,34 @@ import re
 class Dataset(BaseDataset):
     def __init__(self, dataset, generate_text = True):
         self.dataset = dataset
+        print("----------------------Loading data----------------------\n")
         if dataset in ['AIDS', 'Mutagenicity']:
             # load graph data
             edges, graph_idxs, self.graph_labels, link_labels, \
             node_labels, self.max_num_nodes = preprocess_graph_data(dataset)
             
             # converts graph data into a list of maps with the keys: "x", "adj_matrix", "edge_attr_matrix", 'graph_label', 'mask'
+            print("----------------------Generating graphs----------------------\n")
             self.graphs = get_graphs_from_data(edges, graph_idxs, self.graph_labels, \
                                     link_labels, node_labels, self.max_num_nodes)
             if generate_text:
                 # load text data
+                print("----------------------Getting text attributes----------------------\n")
                 data_csv = get_text_attrs(self.graphs, dataset)
                 self.text_attrs = data_csv['captions'].values.tolist()
                 self.smiles = data_csv['SMILES'].values.tolist()
             else:
                 self.text_attrs = None
                 self.smiles = [graph_to_smiles(graph['x'], graph['adj_matrix'], graph['edge_attr_matrix'], \
-                                               graph['mask']) for graph in self.graphs]
+                                               graph['mask'], self.dataset) for graph in self.graphs]
         elif dataset in ['BBBP', 'SIDER', 'Tox21']:
             self.smiles, self.graph_labels = preprocess_smiles_data(dataset)
-            self.graphs, self.max_num_nodes = get_graphs_from_smiles(self.smiles, self.graph_labels)
+            print("----------------------Generating graphs----------------------\n")
+            self.graphs, self.max_num_nodes, self.smiles, \
+                self.graph_labels = get_graphs_from_smiles(self.smiles, self.graph_labels, self.dataset)
             
             if generate_text:
+                print("----------------------Getting text attributes----------------------\n")
                 data_csv = get_text_attrs(self.graphs, dataset, self.smiles)
                 self.text_attrs = data_csv['captions'].values.tolist()
             else:
@@ -44,6 +50,9 @@ class Dataset(BaseDataset):
     def get_key_conponent(self, caption):
         key_component = re.search(r'(in which |where |of which )(the )*(.*?) may', caption, re.IGNORECASE)
         key_component = key_component.group(3) if key_component else None
+        if(key_component == None and len(caption.split(",")) == 2): # only contains 1 functional group
+            key_component = re.search(r'This molecule contains (a|an|the) (.*?) (which may|and)', caption, re.IGNORECASE)
+            key_component = key_component.group(2) if key_component else None
         assert key_component is not None
         
         pattern = re.compile(re.escape(key_component), re.IGNORECASE)
@@ -95,12 +104,13 @@ class Dataset(BaseDataset):
                 smiles=self.smiles[graph_idx],
                 key_component=key_component,
                 caption_to_be_revised=caption_to_be_revised,
-                likely='likely' if graph['graph_label'] == 0 else 'unlikely',
+                likely='increase',
                 dataset_description = DATASET_QUERY_MAP[self.dataset][0],
                 molecule_description = DATASET_QUERY_MAP[self.dataset][1],
             ),
             'num_atoms': graph['num_nodes'],
             'text': self.text_attrs[graph_idx],
             'label': torch.tensor(graph['graph_label'], dtype=torch.long),
-            'graph_idx': torch.tensor(graph_idx, dtype=torch.int)
+            'graph_idx': torch.tensor(graph_idx, dtype=torch.int),
+            'dataset': self.dataset
         }

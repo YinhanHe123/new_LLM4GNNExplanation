@@ -1,3 +1,7 @@
+import random
+import numpy as np
+import torch
+
 DATASET_QUERY_MAP = {
     "AIDS": ["AIDS treatment", "a potential AIDS drug"],
     "BBBP": ["blood-brain-barrier permeability (BBBP)", "blood-brain-barrier permeable"],
@@ -6,6 +10,7 @@ DATASET_QUERY_MAP = {
     "Tox21": ["toxicity testing on peroxisome proliferator-activated receptor gamma (NR-PPAR-gamma)", "toxic against NR-PPAR-gamma"]
 
 }
+
 
 query_format = 'Please describe this molecule: {molecule_data} Your generated response is ONLY a text description STRICTLY in the form of: "This molecule contains __, __, __, and __ functional groups, in which __ may be the most influential for {dataset_description}." NO OTHER sentence patterns allowed. Here, __ is the functional groups (best each less than 10 atoms) or significant subgraphs alphabetically. If you can not find 4 functional groups significant subgraphs, you can just put all you have found in the __ areas)'    
 
@@ -16,3 +21,11 @@ check_valid_query = "Given this molecule in SMILES representation {molecule}, pl
 get_valid_query = "Please find a valid molecule that is the most similar to the molecule {molecule}. The molecule MUST satisfy the Valance Bond Theory and be SIMILAR to the given molecule. ONLY reply in SMILES representation"
 
 openai_api_key = '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'
+
+def set_seed():
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False

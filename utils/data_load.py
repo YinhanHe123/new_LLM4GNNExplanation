@@ -15,17 +15,14 @@ openai.api_key = openai_api_key
 def read_csv(file_path):
     file = open(file_path, "r")
     data = list(csv.reader(file, delimiter=","))
-    if(len(data[0]) == 1):
-        processed_data = [float(item[0]) for item in data]
-    else:
-        processed_data = [[float(item) for item in row] for row in data]
+    try:
+        if(len(data[0]) == 1):
+            processed_data = [float(item[0]) for item in data]
+        else:
+            processed_data = [[float(item) for item in row] for row in data]
+    except ValueError: # in this case, it's a SMILES string
+        processed_data = [item[0] for item in data]
     return processed_data
-
-def convert_node_labels_map(map_to_transfer):
-    inverted_node_label_map = {sym: label for label,sym in NODE_LABEL_MAP.items()}
-    for key in map_to_transfer:
-        map_to_transfer[key] = inverted_node_label_map[map_to_transfer[key]]
-    return map_to_transfer
 
 '''
 @edges: list of edges in graph (node indices start at 0)
@@ -52,10 +49,7 @@ def preprocess_graph_data(dataset):
     if dataset.lower() == "aids":
         node_labels = [row[1] for row in node_labels]
     elif dataset.lower() == "mutagenicity":
-        node_labels_map = {0.0: 'C', 1.0: 'O', 2.0: 'Cl', 3.0: 'H', 4.0: 'N', 5.0: 'F', 6.0: 'Br', 
-                           7.0: 'S', 8.0: 'P', 9.0: 'I', 10.0: 'Na', 11.0: 'K', 12.0: 'Li', 13.0: 'Ca'}
-        node_labels_map = convert_node_labels_map(node_labels_map)
-        node_labels = [node_labels_map[node_label] for node_label in node_labels]
+        node_labels = [node_label + 1 for node_label in node_labels]
 
     return edges, graph_idxs, graph_labels, link_labels, node_labels, max_num_nodes
 
@@ -94,11 +88,17 @@ def get_graphs_from_data(edges, graph_idxs, graph_labels, link_labels, node_labe
                        'graph_label': graph_labels[graph_idx], 'mask': mask, 'num_nodes': len(graph_nodes_idxs)})
     return graphs
 
-def get_graphs_from_smiles(smiles, graph_labels):
+def get_graphs_from_smiles(smiles, graph_labels, dataset):
     graphs = []
     max_nodes = 0
+    invalid_smiles = []
     for idx, smile_str in enumerate(smiles):
-        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str)
+        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset)
+        
+        if node_attrs == None:
+            invalid_smiles.append(idx)
+            continue
+
         if len(node_attrs) > max_nodes:
             max_nodes = len(node_attrs)
         graphs.append({"x" : node_attrs, "adj_matrix": adj_matrix, "edge_attr_matrix": edge_attr_matrix, \
@@ -114,14 +114,18 @@ def get_graphs_from_smiles(smiles, graph_labels):
         graphs[idx]['adj_matrix'] = adj_matrix
         graphs[idx]['edge_attr_matrix'] = edge_matrix
 
-        graphs[idx]['mask'] = torch.cat((graphs[idx]['mask'], torch.BoolTensor([False] * max_nodes - cur_num_nodes)))
-    return graphs, max_nodes
+        graphs[idx]['mask'] = torch.cat((graphs[idx]['mask'], torch.BoolTensor([False] * (max_nodes - cur_num_nodes))))
+    
+    if len(invalid_smiles) > 0:
+        smiles = [smiles[i] for i in range(len(smiles)) if i not in invalid_smiles]
+        graph_labels = [graph_labels[i] for i in range(len(graph_labels)) if i not in invalid_smiles]
+    return graphs, max_nodes, smiles, graph_labels
 
 def get_text_attrs(graphs, dataset, smiles_list=None):
     if not os.path.isfile(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_output.csv'):
         if smiles_list == None:
             smiles_list = [graph_to_smiles(graph['x'], graph['adj_matrix'], graph['edge_attr_matrix'], \
-                                           graph['mask']) for graph in graphs]
+                                           graph['mask'], dataset) for graph in graphs]
         writer = csv.writer(open(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_output.csv', 'w'))
         for smile in tqdm(smiles_list):
             message, completion, prompt = get_description(smile, dataset)
@@ -132,7 +136,7 @@ def get_text_attrs(graphs, dataset, smiles_list=None):
 
 def get_description(molecule_data, dataset):
     response = openai.chat.completions.create(
-        model="gpt-4-1106-preview",
+        model="gpt-3.5-turbo-1106",
         messages=[
             {
                 "role": "user",
