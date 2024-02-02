@@ -2,7 +2,7 @@ import torch
 import argparse
 import os
 from transformers import AutoModel, AutoConfig, AutoTokenizer
-from utils.model_evaluation import evaluate_gce_model
+from model.model_evaluation import evaluate_gce_model
 from utils.pre_defined import *
 from utils.smiles import *
 from utils.datasets import Dataset
@@ -13,7 +13,7 @@ from model.model_utils import *
 def parse_llm_gce_args():
     parser = argparse.ArgumentParser("LLM Guided Global Counterfactual Explanations")
 
-    parser.add_argument("-en", "--num_exp", default=5, type=int, help='number of experiments')
+    parser.add_argument("-ne", "--num_exps", default=5, type=int, help='number of experiments')
 
     parser.add_argument("-d", "--dataset", type=str, default='AIDS')
     parser.add_argument("--train_ratio", default=0.6, type=float, help='train ratio for both GT-GNN training and GCE process`')
@@ -25,19 +25,20 @@ def parse_llm_gce_args():
     parser.add_argument("-nat","--num_atom_types", default=len(NODE_LABEL_MAP['AIDS']), type=int, help='num atom types')
     parser.add_argument("-at","--ablation_type", default=None, choices=['np', 'nt', 'nf'],
                 help='np - no pretrained text encoder, nt - no training of text encoder, nf - no feedback')
+    parser.add_argument("-gt", "--generate_text", default=1, type=int, help='generate text attribute for the graph')
     
     # GNN args
-    parser.add_argument("-ge", "--gnn_epochs", default=100, type=int, help='GNN model epochs')
+    parser.add_argument("-ge", "--gnn_epochs", default=500, type=int, help='GNN model epochs')
     parser.add_argument("-glr", "--gnn_lr", default=1e-3, type=float, help='GNN model learning rate')
     parser.add_argument('-ged', "--gnn_embedding_dim", default=32, type=int, help='GNN model embedding dim')
     parser.add_argument("-gwd", "--gnn_weight_decay", default=0.001, type=float, help='GNN model weight decay')
 
     # Autoencoder args
     parser.add_argument("-lmm", "--lm_model", default="Bert", type=str, help='LM model used in the autoencoder')
-    parser.add_argument("-hd", "--h_dim", default=512, type=int, help='autoencoder hidden dim')
+    parser.add_argument("-ehd", "--exp_h_dim", default=512, type=int, help='autoencoder hidden dim')
     parser.add_argument("-mcl", "--max_context_length", default=4096, type=int, help='max context length')
-    parser.add_argument("-mm", "--m_mu", default=1.0, type=float, help='multiplied weight for the similarity loss')
-    parser.add_argument("-cm", "--c_mu", default=0.5, type=float, help='multiplied weight for the prediction loss')
+    parser.add_argument("-emm", "--exp_m_mu", default=1.0, type=float, help='multiplied weight for the similarity loss')
+    parser.add_argument("-ecm", "--exp_c_mu", default=0.5, type=float, help='multiplied weight for the prediction loss')
     parser.add_argument("-epe", "--exp_pretrain_epochs", default=10, type=int, help='pretrain epochs for text encoder')
     parser.add_argument("-eplr", "--exp_pretrain_lr", default=0.002, type=float, help='pretrain lr for text encoder')
     parser.add_argument("-epwd", "--exp_pretrain_weight_decay", default=1e-5, type=float,help='pretrain weight decay for text encoder')
@@ -47,14 +48,12 @@ def parse_llm_gce_args():
     parser.add_argument("-eft", "--exp_feedback_times", default=3, type=int, help='LLM feedback times for autoencoder')
     parser.add_argument("-etpf", "--exp_train_steps_per_feedback", default=20, type=int, help='train steps between CTA feedback for autoencoder')
     parser.add_argument("-ed", "--exp_dropout", default=0.1, type=float, help='dropout for autoencoder')
-    parser.add_argument("-st", "--satis_thres", default=0.8, type=float, help="The threshold of the satisfaction for counterfactual probability by GT-GNN")
+    parser.add_argument("-et", "--exp_train", default=1, type=int, help='train autoencoder')
 
     return parser.parse_args()
 
 
-def llm_gce(args, dataset, gnn):
-    args.device='cuda:'+str(args.device) if torch.cuda.is_available() else 'cpu'
-    args.num_atom_types = len(NODE_LABEL_MAP[args.dataset])
+def llm_gce(args, dataset, gnn, exp_num):
     data_split = [0.5, 0.25, 0.25] 
     pretrain_train_loader, pretrain_val_loader, _ = dataset.get_dataloaders(args.batch_size, data_split, mask_pos = True)
     explainer_train_loader, explainer_val_loader, _ =  dataset.get_dataloaders(4, data_split, mask_pos = True)
@@ -74,7 +73,7 @@ def llm_gce(args, dataset, gnn):
     
     # pretrain
     if args.ablation_type != "np":
-        pretrain_lm_path = './saved_models/lm_'+args.dataset+'.pth'
+        pretrain_lm_path = './saved_models/lm_'+args.dataset +'.pth'
         if os.path.isfile(pretrain_lm_path):
             print('----------------------Loading Pretrained LM----------------------\n')
             explainer.load_state_dict(torch.load(pretrain_lm_path))
@@ -85,10 +84,17 @@ def llm_gce(args, dataset, gnn):
             torch.save(explainer.state_dict(), pretrain_lm_path)
             print('----------------------Pretrained LM Saved----------------------\n')
 
-    # training
+
     print('----------------------Training Autoencoder----------------------\n')
-    explainer, final_outputs = train_autoencoder(args, explainer, explainer_train_loader, explainer_val_loader)
-    print('----------------------Autoencoder Trained----------------------\n')
+    explainer_path = './saved_models/explainer_'+args.dataset+ '_exp_num'+str(exp_num)+'.pth'
+    if args.exp_train == 0:
+        explainer.load_state_dict(torch.load(explainer_path))
+    else:
+        explainer, final_outputs = train_autoencoder(args, explainer, explainer_train_loader, explainer_val_loader)
+    if args.ablation_type != "nt":
+        torch.save(explainer.state_dict(), explainer_path)
+    print('----------------------Autoencoder Trained and Saved----------------------\n')
+
     """
     Alternate for 159-185:
     # for each epoch: (here, the total epochs is the train_steps_in_one_feedback * feedback_times)
@@ -103,29 +109,30 @@ def llm_gce(args, dataset, gnn):
     feasible_cf_list = get_feasible_cf(final_outputs, dataset.max_num_nodes, dataset.dataset)
     return feasible_cf_list
 
-
-
 def main():
     args = parse_llm_gce_args()
+    args.device='cuda:'+str(args.device) if torch.cuda.is_available() else 'cpu'
+    args.num_atom_types = len(NODE_LABEL_MAP[args.dataset]) + 1
+
     set_seed()
-    dataset = Dataset(dataset=args.dataset)
+    dataset = Dataset(dataset=args.dataset, generate_text=args.generate_text)
     gnn = gnn_trainer(args, dataset) 
 
-
     validity_list, proximity_list = [], []
-    for _ in range(args.num_exp): 
-        cf_list = llm_gce(args, dataset, gnn)
-        validity, proximity = evaluate_gce_model(cf_list, gnn) 
+    for exp_num in range(args.num_exps):
+        cf_list = llm_gce(args, dataset, gnn, exp_num)
+        validity, proximity = evaluate_gce_model(cf_list, gnn, dataset) 
         validity_list.append(validity)
         proximity_list.append(proximity)
         # save the results in csv files
     validity_list = np.array(validity_list)
     proximity_list = np.array(proximity_list)
-    np.savetxt(f'./exp_results/{args.dataset}_validity.csv', validity_list, delimiter=',')
-    np.savetxt('./exp_results/{args.dataset}_proximity.csv', proximity_list, delimiter=',')
-
-
-   
+    with open(f'./exp_results/{args.dataset}_validity.csv', "a") as f:
+        f.write(b"\n")
+        np.savetxt(f, validity_list, delimiter=',', fmt='%1.4f')
+    with open(f'./exp_results/{args.dataset}_proximity.csv', "a") as f:
+        f.write(b"\n")
+        np.savetxt(f, validity_list, delimiter=',', fmt='%1.4f')
 
 if '__main__' == __name__:
     main()

@@ -46,7 +46,7 @@ def preprocess_graph_data(dataset):
     link_labels = [label + 1 for label in link_labels]
     graph_labels = [int(not bool(label)) for label in graph_labels] # inverse graph labels (1 = desired)
 
-    if dataset.lower() == "aids":
+    if dataset == "AIDS":
         node_labels = [row[1] for row in node_labels]
     elif dataset.lower() == "mutagenicity":
         node_labels = [node_label + 1 for node_label in node_labels]
@@ -56,6 +56,8 @@ def preprocess_graph_data(dataset):
 def preprocess_smiles_data(dataset):
     smiles = read_csv(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_smiles.csv')
     graph_labels = read_csv(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_graph_labels.csv')
+    graph_labels = [int(label) for label in graph_labels]
+        
     return smiles, graph_labels
 
 
@@ -93,7 +95,7 @@ def get_graphs_from_smiles(smiles, graph_labels, dataset):
     max_nodes = 0
     invalid_smiles = []
     for idx, smile_str in enumerate(smiles):
-        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset)
+        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset, add_hydrogen=True)
         
         if node_attrs == None:
             invalid_smiles.append(idx)
@@ -146,3 +148,24 @@ def get_description(molecule_data, dataset):
         temperature=0.3
     )
     return response.choices[0].message.content, response.usage.completion_tokens, response.usage.prompt_tokens
+
+# def get_description_batch(molecule_list, dataset):
+#     prompt = ""
+#     for mol in molecule_list:
+#         prompt += mol + '\n'
+
+#     response = openai.chat.completions.create(
+#         model="gpt-3.5-turbo-1106",
+#         messages=[
+#             {
+#                 "role": "user",
+#                 "content": f'The following are molecules in SMILES representation. Please generate a text description for every molecule STRICTLY in the form of: "This molecule contains __, __, __, and __ functional groups, in which __ may be the most influential for {DATASET_QUERY_MAP[dataset][0]}." NO OTHER sentence patterns allowed. Here, __ is the functional groups (best each less than 10 atoms) or significant subgraphs alphabetically. If you can not find 4 functional groups significant subgraphs, you can just put all you have found in the __ areas)'
+#             },
+#             {
+#                 "role": "user",
+#                 "content": prompt,
+#             },
+#         ],
+#         temperature=0.3
+#     )
+#     return response.choices[0].message.content

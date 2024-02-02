@@ -5,8 +5,6 @@ import torch.nn.functional as F
 import os
 from tqdm import tqdm
 
-
-
 class DenseGATConv(nn.Module):
     def __init__(self, in_channels, out_channels, edge_attr_dim, aggr='add', bias=True):
         super(DenseGATConv, self).__init__()
@@ -105,6 +103,7 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
     optimizer = torch.optim.Adam(gnn.parameters(), lr=args.gnn_lr, weight_decay=args.gnn_weight_decay)
     gnn.train()
     gnn_start_train_time = time.time()
+    best_eval_acc = 0
 
     for epoch in tqdm(range(args.gnn_epochs)):
         train_loss = 0
@@ -136,11 +135,13 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
                     eval_acc += (out.argmax(dim=1) == labels).sum().item()
                 eval_loss /= len(gnn_val_loader)
                 eval_acc /= len(gnn_val_loader.sampler)
-                
+                if eval_acc > best_eval_acc:
+                    best_eval_acc = eval_acc
+                    best_model = gnn.state_dict()    
             time_checkpoint = time.time()
             time_comsumed = time_checkpoint - gnn_start_train_time
             print(f'epoch: {epoch} | train_loss: {train_loss} | train_acc : {train_acc} | eval_loss: {eval_loss} | eval_acc: {eval_acc} | time_consumed: {time_comsumed}')
-    
+    gnn.load_state_dict(best_model)
     return gnn
 
 

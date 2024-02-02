@@ -20,7 +20,7 @@ class DualModelOutput(ModelOutput):
         )
 
 class GraphTextClipModel(PreTrainedModel):
-    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, num_atom_types=len(NODE_LABEL_MAP['AIDS']), 
+    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, 
                  emb_dim=768, graph_emb_dim=16, tokenizer=None):
         '''
         @text_encoder: Bert, etc.
@@ -28,12 +28,12 @@ class GraphTextClipModel(PreTrainedModel):
         '''
         super().__init__(lmconfig) 
         self.max_num_nodes = max_num_nodes
-        self.num_atom_types = num_atom_types
+        self.num_atom_types = args.num_atom_types
         self.dropout_value = args.exp_dropout
-        self.h_dim = args.h_dim
+        self.h_dim = args.exp_h_dim
         self.max_context_length = args.max_context_length
-        self.m_mu = args.m_mu
-        self.c_mu = args.c_mu
+        self.m_mu = args.exp_m_mu
+        self.c_mu = args.exp_c_mu
 
         self.graph_encoder = graph_encoder.to(args.device)
         self.text_encoder = text_encoder.to(args.device)
@@ -114,7 +114,12 @@ class GraphTextClipModel(PreTrainedModel):
         for x, adj_matrix, edge_matrix in zip(x_reconst, adj_reconst, edge_reconst):
             mask = torch.BoolTensor([True] * x.size()[0])
             adj_matrix = adj_matrix * (1 - torch.eye(adj_matrix.shape[0])).to(adj_matrix.device)
-            smiles.append(graph_to_smiles(x, adj_matrix, edge_matrix, mask, dataset))
+            smile_str = graph_to_smiles(x, adj_matrix, edge_matrix, mask, dataset)
+            
+            smile_str = smile_str.split('.')
+            smile_str = [substr for substr in smile_str if substr.replace("[", "").replace("]", "") not in NODE_LABEL_MAP[dataset].values()]
+            smile_str = ".".join(smile_str)
+            smiles.append(smile_str)
         return smiles
         
     def contrastive_loss(self, logits: torch.Tensor) -> torch.Tensor:
