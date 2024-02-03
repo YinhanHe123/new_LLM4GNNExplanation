@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import os
 from tqdm import tqdm
 
+from utils.smiles import EDGE_LABEL_MAP
+
 class DenseGATConv(nn.Module):
     def __init__(self, in_channels, out_channels, edge_attr_dim, aggr='add', bias=True):
         super(DenseGATConv, self).__init__()
@@ -116,7 +118,6 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
             loss = F.nll_loss(out,labels.long())
             loss.backward()
             optimizer.step()
-            
             train_loss += loss
             train_acc += (out.argmax(dim=1) == labels).sum().item()
         
@@ -163,7 +164,7 @@ def test_gnn(gnn, gnn_test_loader):
 def gnn_trainer(args, dataset):
     data_split = [0.5, 0.25, 0.25] 
     gnn_train_loader, gnn_val_loader, gnn_test_loader = dataset.get_dataloaders(args.batch_size, data_split)
-    gnn = GCN(num_features=args.num_atom_types, embedding_dim=args.gnn_embedding_dim, num_classes=2, num_edge_attr=4, device=args.device)
+    gnn = GCN(num_features=args.num_atom_types, embedding_dim=args.gnn_embedding_dim, num_classes=2, num_edge_attr=len(EDGE_LABEL_MAP)+1, device=args.device)
     gnn_path = './saved_models/gnn_'+args.dataset+'.pth'
     if os.path.isfile(gnn_path):
         print('----------------------Loading GT-GNN----------------------\n')

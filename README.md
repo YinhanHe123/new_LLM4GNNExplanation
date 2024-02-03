@@ -47,7 +47,7 @@ python main.py
 
 ### SIDER
 ```bash
-python -m pdb main.py -d SIDER -glr 0.01 -gwd 0.0001
- test_acc : 0.6284916201117319
+python -m pdb main.py -d SIDER -glr 0.01 -gwd 0.0005
+test_loss: 1.2117120948704807 | test_acc : 0.6438746438746439
 ```
 ### Tox21

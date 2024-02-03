@@ -95,7 +95,7 @@ def get_graphs_from_smiles(smiles, graph_labels, dataset):
     max_nodes = 0
     invalid_smiles = []
     for idx, smile_str in enumerate(smiles):
-        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset, add_hydrogen=True)
+        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset, add_hydrogen=False)
         
         if node_attrs == None:
             invalid_smiles.append(idx)
@@ -119,6 +119,7 @@ def get_graphs_from_smiles(smiles, graph_labels, dataset):
         graphs[idx]['mask'] = torch.cat((graphs[idx]['mask'], torch.BoolTensor([False] * (max_nodes - cur_num_nodes))))
     
     if len(invalid_smiles) > 0:
+        print('invalid smiles index from the original dataset:', invalid_smiles)
         smiles = [smiles[i] for i in range(len(smiles)) if i not in invalid_smiles]
         graph_labels = [graph_labels[i] for i in range(len(graph_labels)) if i not in invalid_smiles]
     return graphs, max_nodes, smiles, graph_labels
