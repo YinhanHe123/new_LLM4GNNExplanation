@@ -17,7 +17,7 @@ MODEL_PRETRAIN_MAP = {"Bert": "bert-base-uncased"}
 
 def get_responses(conversations: List[Conversation]):
     for conversation in conversations:
-        messages = [{"role":"system", "content": "You are an assistent in a research lab, helping to discover new drugs to treat AIDS"}]
+        messages = [{"role":"system", "content": "You are an assistent in a chemical research lab, helping to discover new molecules"}]
         messages.extend(conversation.messages)
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo-1106",
@@ -65,16 +65,16 @@ def get_feedback(
 def get_feasible_cf(orginal_cfs, max_num_nodes, dataset):
     feasible_cf_list = []
     for idx in range(len(orginal_cfs)):
-        conversation = [Conversation(check_valid_query.format(molecule=orginal_cfs[idx]['cf']))]
-        conversation = get_responses(conversation)
-        if "INVALID" in conversation[0].generated_responses[-1]:
-            conversation[0].add_user_input(get_valid_query.format(molecule=orginal_cfs[idx]['cf']))
-            conversation = get_responses(conversation)
-            orginal_cfs[idx]['cf'] = conversation[0].generated_responses[-1]
+        # conversation = [Conversation(check_valid_query.format(molecule=orginal_cfs[idx]['cf']))]
+        # conversation = get_responses(conversation)
+        # if "INVALID" in conversation[0].generated_responses[-1]:
+        #     conversation[0].add_user_input(get_valid_query.format(molecule=orginal_cfs[idx]['cf']))
+        #     conversation = get_responses(conversation)
+        #     orginal_cfs[idx]['cf'] = conversation[0].generated_responses[-1]
         
         atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(orginal_cfs[idx]['cf'], dataset, max_num_nodes)
         cf_graph = {'x': atom_features, 'edge_attr': edge_attr_matrix, 'adj': adjacency_matrix, 'mask': mask, 
-                    'smiles': orginal_cfs[idx]['cf'],'graph_idx': orginal_cfs[idx]['graph_idx'].item()}
+                    'smiles': orginal_cfs[idx]['cf'],'graph_idx': orginal_cfs[idx]['graph_idx'].item(), 'true_prob': orginal_cfs[idx]['true_prob']}
         feasible_cf_list.append(cf_graph)
     return feasible_cf_list
 
@@ -84,6 +84,7 @@ def pretrain_autoencoder(args, autoencoder, train_loader, val_loader):
         lr=args.exp_pretrain_lr,
         weight_decay=args.exp_pretrain_weight_decay)
     autoencoder.train()
+    autoencoder.graph_encoder.eval()
     
     for epoch in range(args.exp_pretrain_epochs):
         train_loss = 0
@@ -117,6 +118,7 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
         autoencoder.eval()
     else:
         autoencoder.train()
+    autoencoder.graph_encoder.eval()
     
     feedback_times = 1 if args.ablation_type == "nf" else args.exp_feedback_times
     train_steps_in_one_feedback = 1 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
@@ -148,5 +150,5 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
             eval_loss /= len(val_loader)              
             print(f'Train autoencoder restart round: {epoch} | train_loss: {train_loss} | val_loss: {eval_loss}')
         if epoch == args.exp_train_epochs - 1:
-            final_outputs.extend([{"graph_idx" : idx, "cf": smiles} for idx, smiles in zip(batch['graph_idx'], outputs.SMILES)])
+            final_outputs.extend([{"graph_idx" : idx, "cf": smiles, 'true_prob': true_prob} for idx, smiles, true_prob in zip(batch['graph_idx'], outputs.SMILES, outputs.true_prob)])
     return autoencoder, final_outputs

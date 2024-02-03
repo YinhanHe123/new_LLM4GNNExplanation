@@ -57,6 +57,9 @@ def preprocess_smiles_data(dataset):
     smiles = read_csv(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_smiles.csv')
     graph_labels = read_csv(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_graph_labels.csv')
     graph_labels = [int(label) for label in graph_labels]
+
+    if dataset != "BBBP":
+        graph_labels = [int(not bool(label)) for label in graph_labels] 
         
     return smiles, graph_labels
 
@@ -92,31 +95,17 @@ def get_graphs_from_data(edges, graph_idxs, graph_labels, link_labels, node_labe
 
 def get_graphs_from_smiles(smiles, graph_labels, dataset):
     graphs = []
-    max_nodes = 0
+    max_nodes = max([Chem.MolFromSmiles(x).GetNumAtoms() for x in smiles if Chem.MolFromSmiles(x) is not None])
     invalid_smiles = []
     for idx, smile_str in enumerate(smiles):
-        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset, add_hydrogen=False)
+        node_attrs, adj_matrix, edge_attr_matrix, mask = smiles_to_graph(smile_str, dataset, add_hydrogen=False, max_nodes=max_nodes)
         
         if node_attrs == None:
             invalid_smiles.append(idx)
             continue
 
-        if len(node_attrs) > max_nodes:
-            max_nodes = len(node_attrs)
         graphs.append({"x" : node_attrs, "adj_matrix": adj_matrix, "edge_attr_matrix": edge_attr_matrix, \
                        'graph_label': graph_labels[idx], 'mask': mask, 'num_nodes': torch.sum(mask).item()})
-    for idx in range(len(graphs)):
-        cur_num_nodes = len(graphs[idx]['x'])
-        graphs[idx]['x'] = torch.cat((graphs[idx]['x'], torch.Tensor([[0] for _ in range (max_nodes - cur_num_nodes)]))) 
-        
-        adj_matrix = torch.zeros((max_nodes, max_nodes), dtype=torch.float)
-        edge_matrix = torch.zeros((max_nodes, max_nodes), dtype=torch.float)
-        adj_matrix[0:cur_num_nodes, 0:cur_num_nodes] = graphs[idx]['adj_matrix']
-        edge_matrix[0:cur_num_nodes, 0:cur_num_nodes] = graphs[idx]['edge_attr_matrix']
-        graphs[idx]['adj_matrix'] = adj_matrix
-        graphs[idx]['edge_attr_matrix'] = edge_matrix
-
-        graphs[idx]['mask'] = torch.cat((graphs[idx]['mask'], torch.BoolTensor([False] * (max_nodes - cur_num_nodes))))
     
     if len(invalid_smiles) > 0:
         print('invalid smiles index from the original dataset:', invalid_smiles)

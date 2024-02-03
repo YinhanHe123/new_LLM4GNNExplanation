@@ -128,11 +128,11 @@ def main():
     validity_list = np.array(validity_list)
     proximity_list = np.array(proximity_list)
     with open(f'./exp_results/{args.dataset}_validity.csv', "a") as f:
-        f.write(b"\n")
+        f.write("\n")
         np.savetxt(f, validity_list, delimiter=',', fmt='%1.4f')
     with open(f'./exp_results/{args.dataset}_proximity.csv', "a") as f:
-        f.write(b"\n")
-        np.savetxt(f, validity_list, delimiter=',', fmt='%1.4f')
+        f.write("\n")
+        np.savetxt(f, proximity_list, delimiter=',', fmt='%1.4f')
 
 if '__main__' == __name__:
     main()

@@ -69,6 +69,14 @@ class GCN(nn.Module):
         self.predictor = nn.Sequential(nn.Linear(embedding_dim, num_classes)).to(device)
         self.num_features = num_features
 
+        self.init_model()
+
+    def init_model(self):
+        nn.init.xavier_normal_(self.encoder[0].weight.data)
+        nn.init.zeros_(self.encoder[0].bias.data)
+        nn.init.xavier_normal_(self.predictor[0].weight.data)
+        nn.init.zeros_(self.predictor[0].bias.data)
+
     def graph_pooling(self, x, type='mean', mask=None):
         if mask is not None:
             mask_feat = mask.unsqueeze(-1).repeat(1,1,x.shape[-1])  # batchsize x max_num_node x dim_z

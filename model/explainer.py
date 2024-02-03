@@ -133,7 +133,6 @@ class GraphTextClipModel(PreTrainedModel):
     def forward_clip(self, batch, return_loss=False):
         text = self.tokenizer(batch['text'], padding=True, truncation=True, return_tensors='pt').to(self.device)
         text_emb = self.text_encoder(**text)
-        # print(text_emb)
         text_emb = text_emb.last_hidden_state[:, 0, :]
         text_emb = self.dropout(text_emb) 
         text_emb = self.transform(text_emb)       

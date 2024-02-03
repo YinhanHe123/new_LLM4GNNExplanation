@@ -86,12 +86,15 @@ class Dataset(BaseDataset):
                 get_graphs_from_smiles(self.smiles, self.graph_labels, self.dataset)
             if len(self.graphs) > 2000:
                 self.graphs, sampled_idxs, self.negative_idxs = sample_graphs_by_label(self.graphs, dataset)
+                self.smiles = [self.smiles[i] for i in sampled_idxs]
+                self.graph_labels = [self.graph_labels[i] for i in sampled_idxs]
             print("----------------------Getting text attributes----------------------\n")
             data_csv = get_text_attrs(self.graphs, dataset)
             self.text_attrs = data_csv['captions'].values.tolist()
             if len(self.text_attrs) > len(self.graphs):
                 self.text_attrs = [self.text_attrs[i] for i in sampled_idxs]
-                self.smiles = [self.smiles[i] for i in sampled_idxs]
+            # check if all the attributes of the class Dataset are length of 2000
+            # assert len(self.graphs) == len(self.text_attrs) == len(self.smiles) == len(self.graph_labels) == 2000
         else:
             raise NotImplementedError
         
@@ -111,8 +114,8 @@ class Dataset(BaseDataset):
         return key_component, caption_to_be_revised
     
     def get_negative_idxs(self):
-        if self.negative_idxs is not None:
-            return self.negative_idxs
+        # if self.negative_idxs is not None:
+            # return self.negative_idxs
         labels_arr = np.array(self.graph_labels)
         indices = np.where(labels_arr == 0)[0]
         return indices
@@ -136,11 +139,16 @@ class Dataset(BaseDataset):
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
         test_sampler = SubsetRandomSampler(test_indices)
-        
-        train_loader = DataLoader(self, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers)
-        val_loader = DataLoader(self, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers)
-        test_loader = DataLoader(self, batch_size=batch_size, sampler=test_sampler, num_workers=num_workers)
+
+        drop_last = True if batch_size <= 10 else False
+        train_loader = DataLoader(self, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers, drop_last=drop_last)
+        val_loader = DataLoader(self, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers, drop_last=drop_last)
+        test_loader = DataLoader(self, batch_size=batch_size, sampler=test_sampler, num_workers=num_workers, drop_last=drop_last)
         return train_loader, val_loader, test_loader
+    
+    def __len__(self):
+        print('num of graphs!!!', len(self.graphs))
+        return len(self.graphs)
     
     def __getitem__(self, graph_idx):
         graph = self.graphs[graph_idx]
