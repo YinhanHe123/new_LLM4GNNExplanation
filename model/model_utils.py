@@ -70,8 +70,9 @@ def get_feasible_cf(original_cfs, max_num_nodes, dataset):
             original_smiles = dataset.__getitem__(original_cfs[idx]['graph_idx'].detach().clone())
             conversation = [Conversation(reconst_query.format(cf_smiles=original_cfs[idx]['cf'], original_smiles = original_smiles, max_num_nodes=max_num_nodes))]
             conversation = get_responses(conversation)
-            cf = re.search(r'"(.*?)"', conversation[0].generated_responses[-1], re.IGNORECASE).group(1)
-            original_cfs[idx]['cf'] = cf
+            cf = re.search(r'"(.*?)"', conversation[0].generated_responses[-1], re.IGNORECASE)
+            if cf is not None:
+                original_cfs[idx]['cf'] = cf.group(1)
             atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(original_cfs[idx]['cf'], dataset.dataset, max_num_nodes)
         
         cf_graph = {'x': atom_features, 'edge_attr': edge_attr_matrix, 'adj': adjacency_matrix, 'mask': mask, 
