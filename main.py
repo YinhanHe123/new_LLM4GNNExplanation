@@ -106,7 +106,7 @@ def llm_gce(args, dataset, gnn, exp_num):
     test both (run with restart/ multiple epochs vs continuing the session)
     """
     # chemical faesibility adjustment.
-    feasible_cf_list = get_feasible_cf(final_outputs, dataset.max_num_nodes, dataset.dataset)
+    feasible_cf_list = get_feasible_cf(final_outputs, dataset.max_num_nodes, dataset)
     return feasible_cf_list
 
 def main():

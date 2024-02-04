@@ -62,19 +62,20 @@ def get_feedback(
         ))
     return conversations
 
-def get_feasible_cf(orginal_cfs, max_num_nodes, dataset):
+def get_feasible_cf(original_cfs, max_num_nodes, dataset):
     feasible_cf_list = []
-    for idx in range(len(orginal_cfs)):
-        # conversation = [Conversation(check_valid_query.format(molecule=orginal_cfs[idx]['cf']))]
-        # conversation = get_responses(conversation)
-        # if "INVALID" in conversation[0].generated_responses[-1]:
-        #     conversation[0].add_user_input(get_valid_query.format(molecule=orginal_cfs[idx]['cf']))
-        #     conversation = get_responses(conversation)
-        #     orginal_cfs[idx]['cf'] = conversation[0].generated_responses[-1]
+    for idx in range(len(original_cfs)):
+        atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(original_cfs[idx]['cf'], dataset.dataset, max_num_nodes)
+        if atom_features is None:
+            original_smiles = dataset.__getitem__(original_cfs[idx]['graph_idx'].detach().clone())
+            conversation = [Conversation(reconst_query.format(cf_smiles=original_cfs[idx]['cf'], original_smiles = original_smiles, max_num_nodes=max_num_nodes))]
+            conversation = get_responses(conversation)
+            cf = re.search(r'"(.*?)"', conversation[0].generated_responses[-1], re.IGNORECASE).group(1)
+            original_cfs[idx]['cf'] = cf
+            atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(original_cfs[idx]['cf'], dataset.dataset, max_num_nodes)
         
-        atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(orginal_cfs[idx]['cf'], dataset, max_num_nodes)
         cf_graph = {'x': atom_features, 'edge_attr': edge_attr_matrix, 'adj': adjacency_matrix, 'mask': mask, 
-                    'smiles': orginal_cfs[idx]['cf'],'graph_idx': orginal_cfs[idx]['graph_idx'].item(), 'true_prob': orginal_cfs[idx]['true_prob']}
+                    'smiles': original_cfs[idx]['cf'],'graph_idx': original_cfs[idx]['graph_idx'].item(), 'true_prob': original_cfs[idx]['true_prob']}
         feasible_cf_list.append(cf_graph)
     return feasible_cf_list
 
@@ -139,6 +140,8 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
                     train_loss += loss
                     optimizer.step()
                 conversations = get_feedback(outputs, conversations, CF_text, train_loader.dataset.dataset)
+            if epoch == args.exp_train_epochs - 1:
+                final_outputs.extend([{"graph_idx" : idx, "cf": smiles, 'true_prob': true_prob} for idx, smiles, true_prob in zip(batch['graph_idx'], outputs.SMILES, outputs.true_prob)])
         with torch.no_grad():
             train_loss /= (len(train_loader) * train_steps_in_one_feedback * feedback_times)
             # test autoencoder in validation set
@@ -149,6 +152,4 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
                 eval_loss += loss
             eval_loss /= len(val_loader)              
             print(f'Train autoencoder restart round: {epoch} | train_loss: {train_loss} | val_loss: {eval_loss}')
-        if epoch == args.exp_train_epochs - 1:
-            final_outputs.extend([{"graph_idx" : idx, "cf": smiles, 'true_prob': true_prob} for idx, smiles, true_prob in zip(batch['graph_idx'], outputs.SMILES, outputs.true_prob)])
     return autoencoder, final_outputs

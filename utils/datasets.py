@@ -34,7 +34,7 @@ def sample_graphs_by_label(graphs, dataset, sample_size=2000):
         sampled_idxs = np.concatenate([neg_sampled_idxs, pos_sampled_idxs])
         # get the sampled graphs
         sampled_graphs = [graphs[idx] for idx in sampled_idxs]
-        return sampled_graphs, sampled_idxs, neg_sampled_idxs
+        return sampled_graphs, sampled_idxs
     elif dataset in ['Tox21', 'BBBP']:
         graph_labels = [graph['graph_label'] for graph in graphs]
         neg_idxs, pos_idxs = np.where(np.array(graph_labels) == 0)[0], \
@@ -46,7 +46,7 @@ def sample_graphs_by_label(graphs, dataset, sample_size=2000):
             pos_sampled_idxs = np.random.choice(pos_idxs, size=round(sample_size*pos_ratio), replace=False)
         sampled_idxs = np.concatenate([neg_sampled_idxs, pos_sampled_idxs])
         sampled_graphs = [graphs[idx] for idx in sampled_idxs]
-        return sampled_graphs, sampled_idxs, neg_sampled_idxs
+        return sampled_graphs, sampled_idxs
     else:
         raise NotImplementedError
 
@@ -58,7 +58,6 @@ class Dataset(BaseDataset):
     # (2) if csv file not existed: generate the text attributes (for the sampled graphs i put in the input of the function) and save them into a csv file.
     def __init__(self, dataset, generate_text=True):
         self.dataset = dataset
-        self.negative_idxs = None
         print("----------------------Loading data----------------------\n")
         if dataset in ['AIDS', 'Mutagenicity']:
             # load graph data
@@ -70,7 +69,8 @@ class Dataset(BaseDataset):
             self.graphs = get_graphs_from_data(edges, graph_idxs, self.graph_labels, \
                                     link_labels, node_labels, self.max_num_nodes)
             if len(self.graphs) > 2000:
-                self.graphs, _, self.negative_idxs = sample_graphs_by_label(self.graphs, dataset)
+                self.graphs, sampled_idxs = sample_graphs_by_label(self.graphs, dataset)
+                self.graph_labels = [self.graph_labels[i] for i in sampled_idxs]
             print("----------------------Getting text attributes----------------------\n")
             data_csv = get_text_attrs(self.graphs, dataset)
             self.text_attrs = data_csv['captions'].values.tolist()
@@ -85,7 +85,7 @@ class Dataset(BaseDataset):
             self.graphs, self.max_num_nodes, _, _ = \
                 get_graphs_from_smiles(self.smiles, self.graph_labels, self.dataset)
             if len(self.graphs) > 2000:
-                self.graphs, sampled_idxs, self.negative_idxs = sample_graphs_by_label(self.graphs, dataset)
+                self.graphs, sampled_idxs  = sample_graphs_by_label(self.graphs, dataset)
                 self.smiles = [self.smiles[i] for i in sampled_idxs]
                 self.graph_labels = [self.graph_labels[i] for i in sampled_idxs]
             print("----------------------Getting text attributes----------------------\n")
@@ -114,8 +114,6 @@ class Dataset(BaseDataset):
         return key_component, caption_to_be_revised
     
     def get_negative_idxs(self):
-        # if self.negative_idxs is not None:
-            # return self.negative_idxs
         labels_arr = np.array(self.graph_labels)
         indices = np.where(labels_arr == 0)[0]
         return indices
