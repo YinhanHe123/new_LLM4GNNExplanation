@@ -1,3 +1,4 @@
+from datetime import datetime
 import torch
 import argparse
 import os
@@ -39,10 +40,10 @@ def parse_llm_gce_args():
     parser.add_argument("-mcl", "--max_context_length", default=4096, type=int, help='max context length')
     parser.add_argument("-emm", "--exp_m_mu", default=1.0, type=float, help='multiplied weight for the similarity loss')
     parser.add_argument("-ecm", "--exp_c_mu", default=0.5, type=float, help='multiplied weight for the prediction loss')
-    parser.add_argument("-epe", "--exp_pretrain_epochs", default=10, type=int, help='pretrain epochs for text encoder')
+    parser.add_argument("-epe", "--exp_pretrain_epochs", default=20, type=int, help='pretrain epochs for text encoder')
     parser.add_argument("-eplr", "--exp_pretrain_lr", default=0.002, type=float, help='pretrain lr for text encoder')
     parser.add_argument("-epwd", "--exp_pretrain_weight_decay", default=1e-5, type=float,help='pretrain weight decay for text encoder')
-    parser.add_argument("-ete", "--exp_train_epochs", default=10, type=int, help='train restart rounds for autoencoder')
+    parser.add_argument("-ete", "--exp_train_epochs", default=3, type=int, help='train restart rounds for autoencoder')
     parser.add_argument("-etlr", "--exp_train_lr", default=0.002, type=float, help='train lr for autoencoder')
     parser.add_argument("-etwd", "--exp_train_weight_decay", default=1e-5, type=float, help='train weight decay for autoencoder')
     parser.add_argument("-eft", "--exp_feedback_times", default=3, type=int, help='LLM feedback times for autoencoder')
@@ -56,7 +57,7 @@ def parse_llm_gce_args():
 def llm_gce(args, dataset, gnn, exp_num):
     data_split = [0.5, 0.25, 0.25] 
     pretrain_train_loader, pretrain_val_loader, _ = dataset.get_dataloaders(args.batch_size, data_split, mask_pos = True)
-    explainer_train_loader, explainer_val_loader, _ =  dataset.get_dataloaders(4, data_split, mask_pos = True)
+    explainer_train_loader, explainer_val_loader, explainer_test_loader =  dataset.get_dataloaders(4, data_split, mask_pos = True)
      
     gnn.eval()
 
@@ -90,7 +91,7 @@ def llm_gce(args, dataset, gnn, exp_num):
     if args.exp_train == 0:
         explainer.load_state_dict(torch.load(explainer_path))
     else:
-        explainer, final_outputs = train_autoencoder(args, explainer, explainer_train_loader, explainer_val_loader)
+        explainer = train_autoencoder(args, explainer, explainer_train_loader, explainer_val_loader)
     if args.ablation_type != "nt":
         torch.save(explainer.state_dict(), explainer_path)
     print('----------------------Autoencoder Trained and Saved----------------------\n')
@@ -105,9 +106,7 @@ def llm_gce(args, dataset, gnn, exp_num):
     get the counterfactual graphs
     test both (run with restart/ multiple epochs vs continuing the session)
     """
-    # chemical faesibility adjustment.
-    feasible_cf_list = get_feasible_cf(final_outputs, dataset.max_num_nodes, dataset)
-    return feasible_cf_list
+    return explainer, explainer_test_loader
 
 def main():
     args = parse_llm_gce_args()
@@ -118,21 +117,45 @@ def main():
     dataset = Dataset(dataset=args.dataset, generate_text=args.generate_text)
     gnn = gnn_trainer(args, dataset) 
 
+    # Define the file paths
+    validity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_validity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_validity.csv'
+    proximity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_proximity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_proximity.csv'
+
+    start = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+    # Mark the beginning of the experiments
+    with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
+        # Check if file is empty to avoid adding an extra newline at the beginning
+        if os.stat(validity_file_path).st_size == 0:
+            f_validity.write(f"Start Experiment {start}\n")
+        else:
+            f_validity.write(f"\nStart Experiment {start}")
+
+        if os.stat(proximity_file_path).st_size == 0:
+            f_proximity.write(f"Start Experiment {start}\n")
+        else:
+            f_proximity.write(f"\nStart Experiment {start}")
+
     validity_list, proximity_list = [], []
     for exp_num in range(args.num_exps):
-        cf_list = llm_gce(args, dataset, gnn, exp_num)
-        validity, proximity = evaluate_gce_model(cf_list, gnn, dataset) 
+        explainer, explainer_test_loader = llm_gce(args, dataset, gnn, exp_num)
+        validity, proximity = evaluate_gce_model(explainer_test_loader, gnn, dataset, explainer) 
         validity_list.append(validity)
         proximity_list.append(proximity)
-        # save the results in csv files
-    validity_list = np.array(validity_list)
-    proximity_list = np.array(proximity_list)
-    with open(f'./exp_results/{args.dataset}_validity.csv', "a") as f:
-        f.write("\n")
-        np.savetxt(f, validity_list, delimiter=',', fmt='%1.4f')
-    with open(f'./exp_results/{args.dataset}_proximity.csv', "a") as f:
-        f.write("\n")
-        np.savetxt(f, proximity_list, delimiter=',', fmt='%1.4f')
+        
+        # Write the results immediately to the files
+        with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
+            f_validity.write(f'\nExperiment {exp_num}: {validity}')
+            f_proximity.write(f'\nExperiment {exp_num}:{proximity}')
 
+    # write the mean and standart deviation to the validity and proximity files
+    with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
+        f_validity.write(f'\n{np.mean(validity_list)} ± {np.std(validity_list)}')
+        f_proximity.write(f'\n{np.mean(proximity_list)} ± {np.std(proximity_list)}')
+
+    print(f'validity: {np.mean(validity_list)} ± {np.std(validity_list)} \nEnd Experiment')
+    print(f'proximity: {np.mean(proximity_list)} ± {np.std(proximity_list)}\nEnd Experiment')
+
+    print('----------------------Experiment Done----------------------\n')
+                
 if '__main__' == __name__:
     main()

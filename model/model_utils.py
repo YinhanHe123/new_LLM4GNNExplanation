@@ -73,7 +73,10 @@ def get_feasible_cf(original_cfs, max_num_nodes, dataset):
             cf = re.search(r'"(.*?)"', conversation[0].generated_responses[-1], re.IGNORECASE)
             if cf is not None:
                 original_cfs[idx]['cf'] = cf.group(1)
-            atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(original_cfs[idx]['cf'], dataset.dataset, max_num_nodes)
+                try:
+                    atom_features, adjacency_matrix, edge_attr_matrix, mask = smiles_to_graph(original_cfs[idx]['cf'], dataset.dataset, max_num_nodes)
+                except IndexError:
+                    pass
         
         cf_graph = {'x': atom_features, 'edge_attr': edge_attr_matrix, 'adj': adjacency_matrix, 'mask': mask, 
                     'smiles': original_cfs[idx]['cf'],'graph_idx': original_cfs[idx]['graph_idx'].item(), 'true_prob': original_cfs[idx]['true_prob']}
@@ -111,7 +114,6 @@ def pretrain_autoencoder(args, autoencoder, train_loader, val_loader):
     return autoencoder
 
 def train_autoencoder(args, autoencoder, train_loader, val_loader):
-    final_outputs = []
     optimizer = torch.optim.AdamW(
             [param for _, param in autoencoder.named_parameters()],
             lr=args.exp_train_lr,
@@ -141,8 +143,6 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
                     train_loss += loss
                     optimizer.step()
                 conversations = get_feedback(outputs, conversations, CF_text, train_loader.dataset.dataset)
-            if epoch == args.exp_train_epochs - 1:
-                final_outputs.extend([{"graph_idx" : idx, "cf": smiles, 'true_prob': true_prob} for idx, smiles, true_prob in zip(batch['graph_idx'], outputs.SMILES, outputs.true_prob)])
         with torch.no_grad():
             train_loss /= (len(train_loader) * train_steps_in_one_feedback * feedback_times)
             # test autoencoder in validation set
@@ -153,4 +153,4 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
                 eval_loss += loss
             eval_loss /= len(val_loader)              
             print(f'Train autoencoder restart round: {epoch} | train_loss: {train_loss} | val_loss: {eval_loss}')
-    return autoencoder, final_outputs
+    return autoencoder
