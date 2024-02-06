@@ -52,7 +52,14 @@ def graph_to_smiles(x, adj_matrix, edge_attr_matrix, mask, dataset):
         i, j = edge_idx[0].item(), edge_idx[1].item()
         if i < j and i in node_idx_map and j in node_idx_map and int(edge_attr_matrix[i,j].item()) > 0:
             mol.AddBond(node_idx_map[i], node_idx_map[j], EDGE_LABEL_MAP[int(edge_attr_matrix[i,j].item())])
-    return Chem.MolToSmiles(mol.GetMol()) 
+    
+    smiles = Chem.MolToSmiles(mol.GetMol())
+    check_m = Chem.MolFromSmiles(smiles)
+
+    if check_m is None:
+        return None
+
+    return smiles
 
 def smiles_to_graph(smiles, dataset, max_nodes=None, add_hydrogen=False):
     mol = Chem.MolFromSmiles(smiles)
