@@ -23,7 +23,7 @@ def get_responses(conversations: List[Conversation]):
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=messages,
-            temperature=0.3
+            temperature=0.2
         )
         conversation.mark_processed()
         conversation.append_response(response.choices[0].message.content)
@@ -127,11 +127,12 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
     
     feedback_times = 1 if args.ablation_type == "nf" else args.exp_feedback_times
     train_steps_in_one_feedback = 1 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
-    num_batches_per_epoch = ceil(args.exp_train_percent * len(train_loader)) if ceil(args.exp_train_percent * len(train_loader)) > 10 else min(len(train_loader), 30)
+    num_batches_per_epoch = ceil(args.exp_data_percent * len(train_loader)) \
+                    if ceil(args.exp_data_percent * len(train_loader)) > 10 else min(len(train_loader), 30)
     
     for epoch in range(args.exp_train_epochs):
         train_loss = 0
-        selected_idxs = np.random.choice(len(train_loader), size=num_batches_per_epoch, replace=False)
+        selected_idxs = np.random.choice(range(len(train_loader)), size=num_batches_per_epoch, replace=False)
         for idx, batch in enumerate(tqdm(train_loader)):
             if idx not in selected_idxs:
                 continue

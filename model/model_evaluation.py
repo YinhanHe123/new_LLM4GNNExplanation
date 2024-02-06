@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 from model.model_utils import *
 
@@ -6,7 +7,8 @@ def evaluate_gce_model(test_loader, gcn, dataset, explainer):
     Evaluate the GCE model.
     """
     print('----------------------Testing Autoencoder----------------------\n')
-    final_outputs = []        
+    final_outputs = []
+    batch = next(iter(test_loader))
     for batch in tqdm(test_loader):
         outputs = explainer.forward_CF(batch, CF_text=batch['cf_query'], return_loss=True)
         for idx, smiles, true_prob, x_reconst, adj_reconst, edge_reconst in zip(batch['graph_idx'], outputs.SMILES, outputs.true_prob, outputs.x_reconst, outputs.adj_reconst, outputs.edge_reconst):
@@ -15,6 +17,7 @@ def evaluate_gce_model(test_loader, gcn, dataset, explainer):
             edge_reconst = torch.round(edge_reconst.detach().cpu())
             cf = {"graph_idx" : idx, "cf": smiles, 'true_prob': true_prob, 'x': x_reconst, 'adj': adj_reconst, 'edge_attr': edge_reconst}
             final_outputs.append(cf)
+            
     feasible_cf_list = get_feasible_cf(final_outputs, dataset.max_num_nodes, dataset)
 
     validity_without_chem, true_cf_list = compute_validity_without_chem(final_outputs)
@@ -22,7 +25,19 @@ def evaluate_gce_model(test_loader, gcn, dataset, explainer):
 
     validity, valid_cf_list = compute_validity(feasible_cf_list, gcn)
     proximity = compute_proximity(valid_cf_list, dataset)
-    return validity, proximity, validity_without_chem, proximity_without_chem
+
+    original_cfs = [x['cf'] for x in final_outputs]
+    true_cfs = [x in true_cf_list for x in final_outputs]
+    feasible_cfs = [x['smiles'] for x in feasible_cf_list]
+    valid_feasible_cfs = [x in valid_cf_list for x in feasible_cf_list]
+    results = pd.DataFrame(
+    {'original_cfs': original_cfs,
+     'true_cf': true_cfs,
+     'improved_cfs': feasible_cfs,
+     'feasible_cf': valid_feasible_cfs
+    })
+
+    return validity, proximity, validity_without_chem, proximity_without_chem, results
 
 
 def compute_validity(cf_list, gt_gnn):

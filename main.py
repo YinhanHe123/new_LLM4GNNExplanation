@@ -41,17 +41,17 @@ def parse_llm_gce_args():
     parser.add_argument("-mcl", "--max_context_length", default=4096, type=int, help='max context length')
     parser.add_argument("-emm", "--exp_m_mu", default=1.0, type=float, help='multiplied weight for the similarity loss')
     parser.add_argument("-ecm", "--exp_c_mu", default=0.5, type=float, help='multiplied weight for the prediction loss')
-    parser.add_argument("-epe", "--exp_pretrain_epochs", default=50, type=int, help='pretrain epochs for text encoder')
-    parser.add_argument("-eplr", "--exp_pretrain_lr", default=1e-6, type=float, help='pretrain lr for text encoder')
+    parser.add_argument("-epe", "--exp_pretrain_epochs", default=100, type=int, help='pretrain epochs for text encoder')
+    parser.add_argument("-eplr", "--exp_pretrain_lr", default=1e-2, type=float, help='pretrain lr for text encoder')
     parser.add_argument("-epwd", "--exp_pretrain_weight_decay", default=1e-5, type=float,help='pretrain weight decay for text encoder')
     parser.add_argument("-ete", "--exp_train_epochs", default=3, type=int, help='train restart rounds for autoencoder')
-    parser.add_argument("-etlr", "--exp_train_lr", default=1e-6, type=float, help='train lr for autoencoder')
+    parser.add_argument("-etlr", "--exp_train_lr", default=1e-2, type=float, help='train lr for autoencoder')
     parser.add_argument("-etwd", "--exp_train_weight_decay", default=1e-5, type=float, help='train weight decay for autoencoder')
     parser.add_argument("-eft", "--exp_feedback_times", default=3, type=int, help='LLM feedback times for autoencoder')
     parser.add_argument("-etpf", "--exp_train_steps_per_feedback", default=20, type=int, help='train steps between CTA feedback for autoencoder')
     parser.add_argument("-ed", "--exp_dropout", default=0.1, type=float, help='dropout for autoencoder')
     parser.add_argument("-et", "--exp_train", default=1, type=int, help='train autoencoder')
-    parser.add_argument("-etp", "--exp_train_percent", default=0.2, type=float, help='percent of training data to use when training autoencoder')
+    parser.add_argument("-etp", "--exp_data_percent", default=0.2, type=float, help='percent of data to use when training / testing autoencoder')
 
     return parser.parse_args()
 
@@ -133,7 +133,9 @@ def main():
     validity_list, proximity_list, validity_without_chem_list, proximity_without_chem_list = [], [], [], []
     for exp_num in range(args.num_exps):
         explainer, explainer_test_loader = llm_gce(args, dataset, gnn, exp_num)
-        validity, proximity, validity_without_chem, proximity_without_chem = evaluate_gce_model(explainer_test_loader, gnn, dataset, explainer) 
+        validity, proximity, validity_without_chem, proximity_without_chem, cf_results = evaluate_gce_model(explainer_test_loader, gnn, dataset, explainer) 
+        
+        cf_results.to_csv(open(f"./exp_results/{args.dataset}_exp{exp_num}_cfs.csv", "w"), index=False)
         validity_list.append(validity)
         proximity_list.append(proximity)
         validity_without_chem_list.append(validity_without_chem)

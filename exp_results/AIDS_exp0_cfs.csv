@@ -1,0 +1,5 @@
+original_cfs,true_cf,improved_cfs,feasible_cf
+[AsH3].[AsH3].[Co]F123#C456#CC1#P421(#O5OClN1)N63.[SiH4].[SiH4],True,[AsH3].[AsH3].[Co]F123#C456#CC1#P421(#O5OClN1)N63.[SiH4].[SiH4],False
+[AsH2][TeH].[AsH3].[Co]F123#C45#CC1#P421(#OOClN1)[SH]53.[SiH4].[SiH4],True,[AsH2][TeH].[AsH3].[Co]F123#C45#CC1#P421(#OOClN1)[SH]53.[SiH4].[SiH4],False
+CC1=CC=CC=C1,True,CC1=CC=CC=C1,False
+[AsH3].[AsH3].[Co]F123#C456#CC1#P421(#[SH]5OClN1)F63.[SiH4].[SiH4],True,[AsH3].[AsH3].[Co]F123#C456#CC1#P421(#[SH]5OClN1)F63.[SiH4].[SiH4],False
