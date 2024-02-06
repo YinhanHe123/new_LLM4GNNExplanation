@@ -1,3 +1,4 @@
+from math import ceil
 from symbol import atom
 import time
 from typing import List
@@ -126,10 +127,15 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
     
     feedback_times = 1 if args.ablation_type == "nf" else args.exp_feedback_times
     train_steps_in_one_feedback = 1 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
+    num_batches_per_epoch = ceil(args.exp_train_percent * len(train_loader)) if ceil(args.exp_train_percent * len(train_loader)) > 10 else min(len(train_loader), 30)
     
     for epoch in range(args.exp_train_epochs):
         train_loss = 0
-        for batch in tqdm(train_loader):
+        selected_idxs = np.random.choice(len(train_loader), size=num_batches_per_epoch, replace=False)
+        for idx, batch in enumerate(tqdm(train_loader)):
+            if idx not in selected_idxs:
+                continue
+            batch = next(iter(train_loader))
             conversations = [Conversation(cf_query) for cf_query in batch['cf_query']]
             for i in range(feedback_times):
                 conversations = get_responses(conversations) # get CF responses
@@ -144,7 +150,7 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
                     optimizer.step()
                 conversations = get_feedback(outputs, conversations, CF_text, train_loader.dataset.dataset)
         with torch.no_grad():
-            train_loss /= (len(train_loader) * train_steps_in_one_feedback * feedback_times)
+            train_loss /= (num_batches_per_epoch * train_steps_in_one_feedback * feedback_times)
             # test autoencoder in validation set
             eval_loss = 0
             for batch in val_loader:

@@ -48,8 +48,8 @@ def preprocess_graph_data(dataset):
 
     if dataset == "AIDS":
         node_labels = [row[1] for row in node_labels]
-    elif dataset.lower() == "mutagenicity":
-        node_labels = [node_label + 1 for node_label in node_labels]
+    # elif dataset.lower() == "mutagenicity":
+    #     node_labels = [node_label + 1 for node_label in node_labels]
 
     return edges, graph_idxs, graph_labels, link_labels, node_labels, max_num_nodes
 

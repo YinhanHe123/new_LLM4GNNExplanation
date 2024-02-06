@@ -59,12 +59,12 @@ class Dataset(BaseDataset):
     def __init__(self, dataset, generate_text=True):
         self.dataset = dataset
         print("----------------------Loading data----------------------\n")
-        if dataset in ['AIDS', 'Mutagenicity']:
+        if dataset in ['AIDS']:
             # load graph data
             edges, graph_idxs, self.graph_labels, link_labels, \
             node_labels, self.max_num_nodes = preprocess_graph_data(dataset)
             
-            # converts graph data into a list of maps with the keys: "x", "adj_matrix", "edge_attr_matrix", 'graph_label', 'mask'
+            # converts graph data into a list of dicts with the keys: 'x', 'adj_matrix', 'edge_attr_matrix', 'graph_label', 'mask'
             print("----------------------Generating graphs----------------------\n")
             self.graphs = get_graphs_from_data(edges, graph_idxs, self.graph_labels, \
                                     link_labels, node_labels, self.max_num_nodes)
@@ -80,7 +80,7 @@ class Dataset(BaseDataset):
                 self.text_attrs = [self.text_attrs[i] for i in sampled_idxs]
                 self.smiles = [self.smiles[i] for i in sampled_idxs]
         
-        elif dataset in ['BBBP', 'SIDER', 'Tox21', 'ClinTox']:
+        elif dataset in ['BBBP', 'SIDER', 'Tox21', 'ClinTox', 'Mutagenicity']:
             self.smiles, self.graph_labels = preprocess_smiles_data(dataset)
             self.graphs, self.max_num_nodes, _, _ = \
                 get_graphs_from_smiles(self.smiles, self.graph_labels, self.dataset)
@@ -138,7 +138,7 @@ class Dataset(BaseDataset):
         val_sampler = SubsetRandomSampler(val_indices)
         test_sampler = SubsetRandomSampler(test_indices)
 
-        drop_last = True if batch_size <= 10 else False
+        drop_last = True if batch_size <= 10 and self.dataset != "Tox21" else False
         train_loader = DataLoader(self, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers, drop_last=drop_last)
         val_loader = DataLoader(self, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers, drop_last=drop_last)
         test_loader = DataLoader(self, batch_size=batch_size, sampler=test_sampler, num_workers=num_workers, drop_last=drop_last)

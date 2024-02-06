@@ -16,7 +16,6 @@ python main.py
 |---- SIDER/ 
 |---- Tox21/ 
 ./exp_results                   # Results used in the paper
-
 ./model                         
 |----gnn.py                     # Contains the model and functions for ground truth GNN (GT-GNN)
 |----explainer.py               # Contains the model and functions for the LLM autoencoder
@@ -35,19 +34,3 @@ The dependencies needed to run the code can be installed using
 ```shell
 pip install -r requirements.txt
 ```
-
-## Experiments
-### AIDS
-```bash
-python main.py
-```
-### BBBP
-
-### Mutagenicity
-
-### SIDER
-```bash
-python -m pdb main.py -d SIDER -glr 0.00005 -gwd 0.000001
-test_loss: 0.6667738448489796 | test_acc : 0.603988603988604
-```
-### Tox21

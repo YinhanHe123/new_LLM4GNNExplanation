@@ -1,9 +1,11 @@
+from datetime import datetime
 import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
 from tqdm import tqdm
+from utils.utils import write_file_start
 
 from utils.smiles import EDGE_LABEL_MAP
 
@@ -113,7 +115,8 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
     optimizer = torch.optim.Adam(gnn.parameters(), lr=args.gnn_lr, weight_decay=args.gnn_weight_decay)
     gnn.train()
     gnn_start_train_time = time.time()
-    best_eval_acc = 0
+    best_eval_loss = 1e10
+    best_eval_acc, best_model_train_loss, best_model_train_acc = 0,0,0
 
     for epoch in tqdm(range(args.gnn_epochs)):
         train_loss = 0
@@ -144,14 +147,17 @@ def train_gnn(args, gnn, gnn_train_loader, gnn_val_loader):
                     eval_acc += (out.argmax(dim=1) == labels).sum().item()
                 eval_loss /= len(gnn_val_loader)
                 eval_acc /= len(gnn_val_loader.sampler)
-                if eval_acc > best_eval_acc:
+                if eval_loss < best_eval_loss:
+                    best_eval_loss = eval_loss
                     best_eval_acc = eval_acc
+                    best_model_train_loss = train_loss
+                    best_model_train_acc = train_acc
                     best_model = gnn.state_dict()    
             time_checkpoint = time.time()
             time_comsumed = time_checkpoint - gnn_start_train_time
             print(f'epoch: {epoch} | train_loss: {train_loss} | train_acc : {train_acc} | eval_loss: {eval_loss} | eval_acc: {eval_acc} | time_consumed: {time_comsumed}')
     gnn.load_state_dict(best_model)
-    return gnn
+    return gnn, best_model_train_loss, best_model_train_acc, best_eval_loss, best_eval_acc
 
 
 def test_gnn(gnn, gnn_test_loader):
@@ -167,8 +173,8 @@ def test_gnn(gnn, gnn_test_loader):
     test_loss /= len(gnn_test_loader)
     test_acc /= len(gnn_test_loader.sampler)
     print(f'test_loss: {test_loss} | test_acc : {test_acc}')
-
-
+    return test_loss, test_acc
+    
 def gnn_trainer(args, dataset):
     data_split = [0.5, 0.25, 0.25] 
     gnn_train_loader, gnn_val_loader, gnn_test_loader = dataset.get_dataloaders(args.batch_size, data_split)
@@ -180,9 +186,27 @@ def gnn_trainer(args, dataset):
         print('----------------------GT-GNN Loaded----------------------\n')
     else:
         print('----------------------Training GT-GNN----------------------\n')
-        gnn = train_gnn(args, gnn, gnn_train_loader, gnn_val_loader)
-        test_gnn(gnn, gnn_test_loader)
+
+        gnn_file = f'./exp_results/gnn/{gnn_test_loader.dataset.dataset}_results.csv'
+        start = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        write_file_start(start, gnn_file, with_header=False)
+
+        gnn, train_loss, train_acc, eval_loss, eval_acc = train_gnn(args, gnn, gnn_train_loader, gnn_val_loader)
+        test_loss, test_acc = test_gnn(gnn, gnn_test_loader)
+        with open(gnn_file, "a") as f_results:
+            f_results.write(f'\ntrain loss: {train_loss} | train acc: {train_acc} | eval loss: {eval_loss} | eval acc: {eval_acc} |'+ \
+                             f'test loss: {test_loss} | test acc: {test_acc}')
+        
         torch.save(gnn.state_dict(), gnn_path)
+
         print('gnn model saved to {}'.format(gnn_path))
         print('----------------------GT-GNN Saved----------------------\n')
+    for loader in [gnn_train_loader, gnn_test_loader, gnn_val_loader]:
+        for batch in loader:
+            out = gnn(batch)
+            preds = out['y_pred'].argmax(dim = 1)
+            graph_idxs = batch['graph_idx']
+            for idx, pred in zip(graph_idxs, preds):
+                dataset.graph_labels[idx.item()] = pred.item()
+                dataset.graphs[idx]['graph_label'] = pred.item()
     return gnn

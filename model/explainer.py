@@ -11,6 +11,8 @@ from utils.smiles import *
 class DualModelOutput(ModelOutput):
     loss: Optional[torch.FloatTensor] = None
     adj_reconst: torch.FloatTensor = None
+    x_reconst: torch.FloatTensor = None
+    edge_reconst: torch.FloatTensor = None
     SMILES: List[str] = None
     true_prob: torch.FloatTensor = None
     def to_tuple(self) -> Tuple[Any]:
@@ -199,5 +201,5 @@ class GraphTextClipModel(PreTrainedModel):
         SMILES = self.generate_smiles(adj_reconst=adj_reconst, edge_reconst=edge_reconst, 
                                       x_reconst=torch.argmax(x_reconst, dim=-1, keepdim=True), dataset=batch['dataset'][0])
         
-        return DualModelOutput(loss=loss, adj_reconst=adj_reconst, SMILES=SMILES, 
+        return DualModelOutput(loss=loss, adj_reconst=adj_reconst, x_reconst=x_reconst, edge_reconst=edge_reconst, SMILES=SMILES, 
                                true_prob=true_prob.detach().cpu().numpy().tolist())

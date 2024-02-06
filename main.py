@@ -4,6 +4,7 @@ import argparse
 import os
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 from model.model_evaluation import evaluate_gce_model
+from utils.utils import write_file_start
 from utils.pre_defined import *
 from utils.smiles import *
 from utils.datasets import Dataset
@@ -40,16 +41,17 @@ def parse_llm_gce_args():
     parser.add_argument("-mcl", "--max_context_length", default=4096, type=int, help='max context length')
     parser.add_argument("-emm", "--exp_m_mu", default=1.0, type=float, help='multiplied weight for the similarity loss')
     parser.add_argument("-ecm", "--exp_c_mu", default=0.5, type=float, help='multiplied weight for the prediction loss')
-    parser.add_argument("-epe", "--exp_pretrain_epochs", default=20, type=int, help='pretrain epochs for text encoder')
-    parser.add_argument("-eplr", "--exp_pretrain_lr", default=0.002, type=float, help='pretrain lr for text encoder')
+    parser.add_argument("-epe", "--exp_pretrain_epochs", default=50, type=int, help='pretrain epochs for text encoder')
+    parser.add_argument("-eplr", "--exp_pretrain_lr", default=1e-6, type=float, help='pretrain lr for text encoder')
     parser.add_argument("-epwd", "--exp_pretrain_weight_decay", default=1e-5, type=float,help='pretrain weight decay for text encoder')
     parser.add_argument("-ete", "--exp_train_epochs", default=3, type=int, help='train restart rounds for autoencoder')
-    parser.add_argument("-etlr", "--exp_train_lr", default=0.002, type=float, help='train lr for autoencoder')
+    parser.add_argument("-etlr", "--exp_train_lr", default=1e-6, type=float, help='train lr for autoencoder')
     parser.add_argument("-etwd", "--exp_train_weight_decay", default=1e-5, type=float, help='train weight decay for autoencoder')
     parser.add_argument("-eft", "--exp_feedback_times", default=3, type=int, help='LLM feedback times for autoencoder')
     parser.add_argument("-etpf", "--exp_train_steps_per_feedback", default=20, type=int, help='train steps between CTA feedback for autoencoder')
     parser.add_argument("-ed", "--exp_dropout", default=0.1, type=float, help='dropout for autoencoder')
     parser.add_argument("-et", "--exp_train", default=1, type=int, help='train autoencoder')
+    parser.add_argument("-etp", "--exp_train_percent", default=0.2, type=float, help='percent of training data to use when training autoencoder')
 
     return parser.parse_args()
 
@@ -87,7 +89,10 @@ def llm_gce(args, dataset, gnn, exp_num):
 
 
     print('----------------------Training Autoencoder----------------------\n')
-    explainer_path = './saved_models/explainer_'+args.dataset+ '_exp_num'+str(exp_num)+'.pth'
+    if args.ablation_type != None:
+        explainer_path = './saved_models/' + args.ablation_type + '_explainer_'+args.dataset+ '_exp_num'+str(exp_num)+'.pth'
+    else:
+        explainer_path = './saved_models/explainer_'+args.dataset+ '_exp_num'+str(exp_num)+'.pth'
     if args.exp_train == 0:
         explainer.load_state_dict(torch.load(explainer_path))
     else:
@@ -116,43 +121,40 @@ def main():
     set_seed()
     dataset = Dataset(dataset=args.dataset, generate_text=args.generate_text)
     gnn = gnn_trainer(args, dataset) 
-
+ 
     # Define the file paths
-    validity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_validity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_validity.csv'
-    proximity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_proximity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_proximity.csv'
+    save_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}.csv'
+    # proximity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_proximity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_proximity.csv'
 
     start = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     # Mark the beginning of the experiments
-    with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
-        # Check if file is empty to avoid adding an extra newline at the beginning
-        if os.stat(validity_file_path).st_size == 0:
-            f_validity.write(f"Start Experiment {start}\n")
-        else:
-            f_validity.write(f"\nStart Experiment {start}")
+    write_file_start(start, save_file_path)
 
-        if os.stat(proximity_file_path).st_size == 0:
-            f_proximity.write(f"Start Experiment {start}\n")
-        else:
-            f_proximity.write(f"\nStart Experiment {start}")
-
-    validity_list, proximity_list = [], []
+    validity_list, proximity_list, validity_without_chem_list, proximity_without_chem_list = [], [], [], []
     for exp_num in range(args.num_exps):
         explainer, explainer_test_loader = llm_gce(args, dataset, gnn, exp_num)
-        validity, proximity = evaluate_gce_model(explainer_test_loader, gnn, dataset, explainer) 
+        validity, proximity, validity_without_chem, proximity_without_chem = evaluate_gce_model(explainer_test_loader, gnn, dataset, explainer) 
         validity_list.append(validity)
         proximity_list.append(proximity)
+        validity_without_chem_list.append(validity_without_chem)
+        proximity_without_chem_list.append(proximity_without_chem)
         
         # Write the results immediately to the files
-        with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
-            f_validity.write(f'\nExperiment {exp_num}: {validity}')
-            f_proximity.write(f'\nExperiment {exp_num}:{proximity}')
+        with open(save_file_path, "a") as f:
+            f.write(f'\nExperiment {exp_num}, {validity}, {proximity}, {validity_without_chem}, {proximity_without_chem}')
+
 
     # write the mean and standart deviation to the validity and proximity files
-    with open(validity_file_path, "a") as f_validity, open(proximity_file_path, "a") as f_proximity:
-        f_validity.write(f'\n{np.mean(validity_list)} ± {np.std(validity_list)}')
-        f_proximity.write(f'\n{np.mean(proximity_list)} ± {np.std(proximity_list)}')
+    with open(save_file_path, "a") as f:
+        # f_validity.write(f'\n{np.mean(validity_list)} ± {np.std(validity_list)}')
+        # f_proximity.write(f'\n{np.mean(proximity_list)} ± {np.std(proximity_list)}')
+        f.write(f'\nSummary,{np.mean(validity_list)} ± {np.std(validity_list)}, \
+                {np.mean(proximity_list)} ± {np.std(proximity_list)}, \
+                {np.mean(validity_without_chem_list)} ± {np.std(validity_without_chem_list)}, \
+                {np.mean(proximity_without_chem_list)} ± {np.std(proximity_without_chem_list)}\nEnd Experiment') \
+        
 
-    print(f'validity: {np.mean(validity_list)} ± {np.std(validity_list)} \nEnd Experiment')
+    print(f'validity: {np.mean(validity_list)} ± {np.std(validity_list)}')
     print(f'proximity: {np.mean(proximity_list)} ± {np.std(proximity_list)}\nEnd Experiment')
 
     print('----------------------Experiment Done----------------------\n')

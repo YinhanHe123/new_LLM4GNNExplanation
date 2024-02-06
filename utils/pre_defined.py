@@ -21,8 +21,8 @@ feedback_format = 'The generated counterfactual is {smiles}. The probability of 
 check_valid_query = "Given this molecule in SMILES representation {molecule}, please check if it satisfies the Valance Bond Theory. If it does, then reply VALID. If not, then reply INVALID. DO NOT reply with more than 1 word"
 get_valid_query = "Please find a valid molecule that is the most similar to the molecule {molecule}. The molecule MUST satisfy the Valance Bond Theory and be SIMILAR to the given molecule. ONLY reply in SMILES representation"
 
-reconst_query = 'Please recover the valid SMILES representation from the corrupted one. The recovered SMILES should be similar to the reference SMILES but make as few changes. Think of the Periodic Table and the changes of every element. Make sure that the recovered SMILES is \
-                valid and follows the Valence Bond Theory. The corrupted SMILES is The corrupted smiles is "{cf_smiles}" and the reference smiles is "{original_smiles}". Respond ONLY with the reconstructed SMILES. The reconstructed SMILES should have AT MOST {max_num_nodes} atoms'
+reconst_query = 'Please recover the valid SMILES representation from the corrupted one. The recovered SMILES should be similar to the reference SMILES but make as few changes as possible. Think of the Periodic Table and the changes of every element. Make sure that the recovered SMILES is \
+                valid and follows the Valence Bond Theory. The desired SMILES is SIMILSR to BOTH the CORRUPTED SMILES and the REFERENCE SMILES but it is NOT the REFERENCE SMILES. The corrupted smiles is "{cf_smiles}" and the reference smiles is "{original_smiles}". Respond ONLY with the reconstructed SMILES. The reconstructed SMILES should have AT MOST {max_num_nodes} atoms'
 
 openai_api_key = "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"
 
