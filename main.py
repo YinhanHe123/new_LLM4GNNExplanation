@@ -79,7 +79,8 @@ def llm_gce(args, dataset, gnn, exp_num):
         pretrain_lm_path = './saved_models/lm_'+args.dataset +'.pth'
         if os.path.isfile(pretrain_lm_path):
             print('----------------------Loading Pretrained LM----------------------\n')
-            explainer.load_state_dict(torch.load(pretrain_lm_path))
+            pretrain_state_dict = torch.load(pretrain_lm_path, map_location=args.device)
+            explainer.load_state_dict(pretrain_state_dict)
             print('----------------------Pretrained LM Loaded----------------------\n')
         else:
             print('----------------------Training Pretrained LM----------------------\n')
@@ -94,7 +95,8 @@ def llm_gce(args, dataset, gnn, exp_num):
     else:
         explainer_path = './saved_models/explainer_'+args.dataset+ '_exp_num'+str(exp_num)+'.pth'
     if args.exp_train == 0:
-        explainer.load_state_dict(torch.load(explainer_path))
+        state_dict = torch.load(explainer_path, map_location=args.device)
+        explainer.load_state_dict(state_dict)
     else:
         explainer = train_autoencoder(args, explainer, explainer_train_loader, explainer_val_loader)
     if args.ablation_type != "nt":
@@ -123,7 +125,38 @@ def main():
     gnn = gnn_trainer(args, dataset) 
  
     # Define the file paths
-    save_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}.csv'
+    save_file_path = (
+         f'./exp_results/ablation/{args.ablation_type}_'
+         f'{args.dataset}_'
+         f'pretrain_lr_{args.exp_pretrain_lr}_'
+         f'pretrained_epochs_{args.exp_pretrain_epochs}_'
+         f'pretrained_weight_decay_{args.exp_pretrain_weight_decay}_'
+         f'train_lr_{args.exp_train_lr}_'
+         f'train_epochs_{args.exp_train_epochs}_'
+         f'train_weight_decay_{args.exp_train_weight_decay}_'
+         f'feedback_times_{args.exp_feedback_times}_'
+         f'train_steps_per_feedback_{args.exp_train_steps_per_feedback}_'
+         f'train_data_percent_{args.exp_data_percent}.csv'
+         if args.ablation_type is not None else
+         f'./exp_results/{args.dataset}_'
+         f'pretrain_lr_{args.exp_pretrain_lr}_'
+         f'pretrained_epochs_{args.exp_pretrain_epochs}_'
+         f'pretrained_weight_decay_{args.exp_pretrain_weight_decay}_'
+         f'train_lr_{args.exp_train_lr}_'
+         f'train_epochs_{args.exp_train_epochs}_'
+         f'train_weight_decay_{args.exp_train_weight_decay}_'
+         f'feedback_times_{args.exp_feedback_times}_'
+         f'train_steps_per_feedback_{args.exp_train_steps_per_feedback}_'
+         f'train_data_percent_{args.exp_data_percent}.csv'
+         )
+    # save_file_path = f'./exp_results/ablation/{args.ablation_type}_'
+    #                  f'pretrain_epochs_{args.exp_pretrain_epochs}_'
+    #                   pretrain_lr_{args.exp_pretrain_lr}_
+    #                   pretrain_weight_decay_{args.exp_pretrain_weight_decay}_
+
+    #                   {args.dataset}.csv' if args.ablation_type is not None \
+    #                  else 
+    #                  f'./exp_results/{args.dataset}.csv'
     # proximity_file_path = f'./exp_results/ablation/{args.ablation_type}_{args.dataset}_proximity.csv' if args.ablation_type is not None else f'./exp_results/{args.dataset}_proximity.csv'
 
     start = datetime.now().strftime("%m/%d/%Y %H:%M:%S")

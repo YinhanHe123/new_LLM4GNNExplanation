@@ -29,12 +29,15 @@ def evaluate_gce_model(test_loader, gcn, dataset, explainer):
     original_cfs = [x['cf'] for x in final_outputs]
     true_cfs = [x in true_cf_list for x in final_outputs]
     feasible_cfs = [x['smiles'] for x in feasible_cf_list]
-    valid_feasible_cfs = [x in valid_cf_list for x in feasible_cf_list]
+    valid_cfs_smiles = [x['smiles'] for x in valid_cf_list]
+    valid_feasible_cfs = [x in valid_cfs_smiles for x in feasible_cfs]
+    
     results = pd.DataFrame(
     {'original_cfs': original_cfs,
-     'true_cf': true_cfs,
+    'true_cf': true_cfs,
      'improved_cfs': feasible_cfs,
-     'feasible_cf': valid_feasible_cfs
+     'feasible_cf': valid_feasible_cfs,
+     'graph_idx': [x['graph_idx'] for x in final_outputs],
     })
 
     return validity, proximity, validity_without_chem, proximity_without_chem, results

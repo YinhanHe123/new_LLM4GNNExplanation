@@ -1,1 +1,5 @@
-Start Experiment 02/06/2024 01:28:20
+Start Experiment 02/06/2024 12:05:36
+
+train loss: 0.11596359312534332 | train acc: 0.97 | eval loss: 0.12407322821673006 | eval acc: 0.972 |test loss: 0.15050699457060546 | test acc: 0.974
+Start Experiment 02/06/2024 12:18:02
+train loss: 0.11596359312534332 | train acc: 0.97 | eval loss: 0.12407322821673006 | eval acc: 0.972 |test loss: 0.15050699457060546 | test acc: 0.974

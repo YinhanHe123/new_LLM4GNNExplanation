@@ -182,7 +182,8 @@ def gnn_trainer(args, dataset):
     gnn_path = './saved_models/gnn_'+args.dataset+'.pth'
     if os.path.isfile(gnn_path):
         print('----------------------Loading GT-GNN----------------------\n')
-        gnn.load_state_dict(torch.load(gnn_path))
+        state_dict = torch.load(gnn_path, map_location=args.device)
+        gnn.load_state_dict(state_dict)
         print('----------------------GT-GNN Loaded----------------------\n')
     else:
         print('----------------------Training GT-GNN----------------------\n')

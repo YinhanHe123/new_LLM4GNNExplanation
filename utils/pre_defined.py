@@ -24,7 +24,7 @@ get_valid_query = "Please find a valid molecule that is the most similar to the 
 reconst_query = 'Please recover the valid SMILES representation from the corrupted one. The recovered SMILES should be similar to the reference SMILES but make as few changes as possible. Think of the Periodic Table and the changes of every element. Make sure that the recovered SMILES is \
                 valid and follows the Valence Bond Theory. The desired SMILES is SIMILSR to BOTH the CORRUPTED SMILES and the REFERENCE SMILES but it is NOT the REFERENCE SMILES. The corrupted smiles is "{cf_smiles}" and the reference smiles is "{original_smiles}". Respond ONLY with the reconstructed SMILES. The reconstructed SMILES should have AT MOST {max_num_nodes} atoms'
 
-openai_api_key = "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"
+openai_api_key = "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"
 
 def set_seed():
     random.seed(42)

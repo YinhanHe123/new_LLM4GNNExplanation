@@ -28,9 +28,8 @@ def sample_graphs_by_label(graphs, dataset, sample_size=2000):
         print(f"Negative ratio: {neg_ratio}, Positive ratio: {pos_ratio}")
         # sample (without putback) 2000 graphs proportionally by their labels
         with temp_seed(42):
-            neg_sampled_idxs = np.random.choice(neg_idxs, size=round(sample_size*neg_ratio)+1, replace=False)
+            neg_sampled_idxs = np.random.choice(neg_idxs, size=round(sample_size*neg_ratio), replace=False)
             pos_sampled_idxs = np.random.choice(pos_idxs, size=round(sample_size*pos_ratio), replace=False)
-        neg_sampled_idxs = np.delete(neg_sampled_idxs, np.argwhere(neg_sampled_idxs==2143))
         sampled_idxs = np.concatenate([neg_sampled_idxs, pos_sampled_idxs])
         # get the sampled graphs
         sampled_graphs = [graphs[idx] for idx in sampled_idxs]

@@ -58,7 +58,7 @@ def preprocess_smiles_data(dataset):
     graph_labels = read_csv(f'{DATASET_ROOT_PATH}{dataset}/{dataset}_graph_labels.csv')
     graph_labels = [int(label) for label in graph_labels]
 
-    if dataset != "BBBP":
+    if dataset not in ["BBBP", "Tox21"]:
         graph_labels = [int(not bool(label)) for label in graph_labels] 
         
     return smiles, graph_labels
