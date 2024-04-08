@@ -1,0 +1,9 @@
+validity: [100.0, 100.0, 100.0]
+validity mean and std: ('100.0', '0.0')
+number of valid counterfactuals: 138
+chemical validity mean and std: ('100.0', '0.0')
+proximity: [7.839646088904229, 7.839646088904229, 7.839646088904229]
+number of chemically valid counterfactuals: 138
+proximity mean and std: ('7.839646088904229', '0.0')
+chemical proximity mean and std: ('7.839646088904229', '0.0')
+time: [156.5536234855652, 42.13111243247986, 42.57414218187332, 42.57415021657944]

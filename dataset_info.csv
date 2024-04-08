@@ -1,0 +1,6 @@
+,dataset,max_nodes,ave_nodes,ave_edges,number of graphs
+0,AIDS,95,15.6925,16.195,2000
+1,Mutagenicity,96,16.586,17.451,2000
+2,Tox21,132,17.183,17.738,2000
+3,BBBP,132,24.0525,25.941,2000
+4,ClinTox,121,27.738493723849373,29.399582,478

@@ -1,0 +1,10 @@
+Start Experiment 02/06/2024 16:05:33
+
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Experiment 0, 0.0, -1, 100.0, 1588.1346292219262
+Experiment 1, 0.0, -1, 100.0, 1558.049165303616
+Experiment 2, 0.0, -1, 100.0, 1598.696736336132
+Experiment 3, 0.0, -1, 100.0, 1536.9671621280224
+Experiment 4, 12.5, 90.45319286982219, 100.0, 1579.5076961300595
+Summary,2.5 ± 5.0,                 17.290638573964436 ± 36.58127714792887,                 100.0 ± 0.0,                 1572.2710778239511 ± 22.140305302629418
+End Experiment

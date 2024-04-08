@@ -1,0 +1,7 @@
+validity: [0.0, 0.0, 0.0, 0.0, 0.0]
+validity mean and std: ('0.0', '0.0')
+chemical validity mean and std: ('0.0', '0.0')
+proximity: [0, 0, 0, 0, 0]
+proximity mean and std: ('0.0', '0.0')
+chemical proximity mean and std: ('0.0', '0.0')
+time: [4.354618513584137, 4.415032494068146, 4.398795580863952, 4.430128884315491, 4.463293337821961, 4.463299655914307]

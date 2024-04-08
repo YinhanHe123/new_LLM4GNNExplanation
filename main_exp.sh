@@ -17,7 +17,7 @@ tmux new-session -d -s $session_name
 datasets=("Tox21" "AIDS" "Mutagenicity" "ClinTox" "BBBP")
 
 # Define GPU devices
-devices=(0 1 2 3 4 5)
+devices=(0 3 5)
 
 # Counter for devices array to assign GPUs in round-robin
 device_counter=0

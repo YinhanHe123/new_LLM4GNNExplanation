@@ -22,8 +22,16 @@ class DualModelOutput(ModelOutput):
         )
 
 class GraphTextClipModel(PreTrainedModel):
-    def __init__(self, text_encoder, graph_encoder, lmconfig, args, max_num_nodes=100, 
-                 emb_dim=768, graph_emb_dim=16, tokenizer=None):
+    def __init__(
+        self, 
+        text_encoder, 
+        graph_encoder, 
+        llm_model,
+        lmconfig, args, 
+        max_num_nodes=100, 
+        emb_dim=768, 
+        graph_emb_dim=16, 
+        tokenizer=None):
         '''
         @text_encoder: Bert, etc.
         @graph_encoder: GCN, etc.

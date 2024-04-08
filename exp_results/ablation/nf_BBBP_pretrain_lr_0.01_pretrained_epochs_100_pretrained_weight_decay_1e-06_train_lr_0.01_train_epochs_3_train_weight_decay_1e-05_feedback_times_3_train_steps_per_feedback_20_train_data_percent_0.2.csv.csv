@@ -1,0 +1,27 @@
+Start Experiment 02/08/2024 12:29:32
+
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Experiment 0, 0.0, -1, 100.0, 629.8099563967254
+Experiment 1, 2.2058823529411766, 30.803971926371258, 100.0, 602.2558075104715
+Experiment 2, 2.941176470588235, 44.18181622028351, 100.0, 600.1327983366223
+Experiment 3, 5.147058823529411, 35.71067837306431, 100.0, 615.8587196149929
+Experiment 4, 2.2058823529411766, 37.558578173319496, 100.0, 584.477970311075
+Summary,2.5 ± 1.6507312000473269,                 29.451008938607714 ± 15.817757601629964,                 100.0 ± 0.0,                 606.5070504339774 ± 15.326210686509446
+End Experiment
+Start Experiment 02/08/2024 15:44:47
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Start Experiment 02/08/2024 15:47:34
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Start Experiment 02/08/2024 17:10:39
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Start Experiment 02/08/2024 21:36:35
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Start Experiment 02/08/2024 21:41:43
+Experiment, validity, proximity, validity_without_chem, proximity_without_chem
+Experiment 0, 13.23529411764706, 42.633319245444405, 100.0, 615.649143281005
+Experiment 1, 24.264705882352942, 38.56119522903905, 100.0, 641.1021096066713
+Experiment 2, 10.294117647058822, 38.3367828301021, 100.0, 653.496919282893
+Experiment 3, 27.941176470588236, 35.66667468296854, 100.0, 658.2973741803595
+Experiment 4, 20.588235294117645, 37.47762540408543, 100.0, 706.4359672137248
+Summary,19.26470588235294 ± 6.61601287011882,                 38.53511947832791 ± 2.2882975314884426,                 100.0 ± 0.0,                 654.9963027129307 ± 29.666249728919247
+End Experiment

@@ -1,0 +1,13 @@
+Start Experiment 02/06/2024 12:13:59
+
+train loss: 0.48674067854881287 | train acc: 0.781 | eval loss: 0.5693459007889032 | eval acc: 0.722 |test loss: 0.6297637205570936 | test acc: 0.762
+Start Experiment 02/07/2024 21:35:39
+train loss: 0.48661452531814575 | train acc: 0.783 | eval loss: 0.5692693665623665 | eval acc: 0.724 |test loss: 0.638271963223815 | test acc: 0.742
+Start Experiment 02/08/2024 17:11:15
+Start Experiment 02/08/2024 17:12:26
+train loss: 0.47285208106040955 | train acc: 0.786 | eval loss: 0.5834571532905102 | eval acc: 0.728 |test loss: 0.7103083729743958 | test acc: 0.736
+Start Experiment 02/08/2024 19:11:15
+Start Experiment 02/08/2024 19:13:42
+Start Experiment 02/08/2024 20:13:17
+Start Experiment 02/08/2024 20:16:12
+train loss: 0.47332659363746643 | train acc: 0.789 | eval loss: 0.5829054266214371 | eval acc: 0.73 |test loss: 0.7053080834448338 | test acc: 0.746

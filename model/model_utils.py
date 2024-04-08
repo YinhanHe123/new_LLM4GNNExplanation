@@ -3,6 +3,7 @@ from symbol import atom
 import time
 from typing import List
 from tqdm import tqdm
+import transformers
 from transformers import Conversation
 from utils.pre_defined import *
 from utils.smiles import *
@@ -14,19 +15,36 @@ from rdkit import Chem
 
 openai.api_key = openai_api_key
 
-MODEL_PRETRAIN_MAP = {"Bert": "bert-base-uncased"}
+MODEL_PRETRAIN_MAP = {
+    "Bert": "bert-base-uncased",
+    "DeBERTa": "microsoft/deberta-base",
+    "Electra": "google/electra-base-discriminator",
+}
 
-def get_responses(conversations: List[Conversation]):
+def get_responses(
+    conversations: List[Conversation],
+    llm_model="gpt-3.5-turbo-1106"
+):
+    use_openai = 'gpt' in llm_model
+    if not use_openai:
+        tokenizer = transformers.AutoTokenizer.from_pretrained(llm_model)
+        model = transformers.AutoModelForCausalLM.from_pretrained(llm_model)
     for conversation in conversations:
         messages = [{"role":"system", "content": "You are an assistent in a chemical research lab, helping to discover new molecules"}]
         messages.extend(conversation.messages)
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            messages=messages,
-            temperature=0.2
-        )
+        if use_openai:
+            response = openai.chat.completions.create(
+                model=llm_model,
+                messages=messages,
+                temperature=0.2
+            )
+            response = response.choices[0].message.content
+        else:
+            inputs = tokenizer.encode("\n".join([f'{msg['role']}: {msg['content']}' for msg in messages]), return_tensors="pt")
+            response = model.generate(inputs, max_length=100, temperature=0.2, pad_token_id=tokenizer.eos_token_id)
+            response = tokenizer.decode(response[0], skip_special_tokens=True)
         conversation.mark_processed()
-        conversation.append_response(response.choices[0].message.content)
+        conversation.append_response(response)
     return conversations
 
 def get_CF_text(conversations: List[Conversation]):
@@ -80,7 +98,8 @@ def get_feasible_cf(original_cfs, max_num_nodes, dataset):
                     pass
         
         cf_graph = {'x': atom_features, 'edge_attr': edge_attr_matrix, 'adj': adjacency_matrix, 'mask': mask, 
-                    'smiles': original_cfs[idx]['cf'],'graph_idx': original_cfs[idx]['graph_idx'].item(), 'true_prob': original_cfs[idx]['true_prob']}
+                    'smiles': original_cfs[idx]['cf'],'graph_idx': original_cfs[idx]['graph_idx'].item(), 'true_prob': original_cfs[idx]['true_prob'],
+                    'orig_num_nodes': original_cfs[idx]['orig_num_nodes']}
         feasible_cf_list.append(cf_graph)
     return feasible_cf_list
 
@@ -126,9 +145,10 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
     autoencoder.graph_encoder.eval()
     
     feedback_times = 1 if args.ablation_type == "nf" else args.exp_feedback_times
-    train_steps_in_one_feedback = 1 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
+    train_steps_in_one_feedback = 60 if args.ablation_type == "nf" else args.exp_train_steps_per_feedback
     num_batches_per_epoch = ceil(args.exp_data_percent * len(train_loader)) \
-                    if ceil(args.exp_data_percent * len(train_loader)) > 10 else min(len(train_loader), 30)
+                    if ceil(args.exp_data_percent * len(train_loader)) > 10 else min(len(train_loader), 20)
+    num_batches_per_epoch = min(num_batches_per_epoch, 40)
     
     for epoch in range(args.exp_train_epochs):
         train_loss = 0
@@ -136,10 +156,12 @@ def train_autoencoder(args, autoencoder, train_loader, val_loader):
         for idx, batch in enumerate(tqdm(train_loader)):
             if idx not in selected_idxs:
                 continue
-            batch = next(iter(train_loader))
             conversations = [Conversation(cf_query) for cf_query in batch['cf_query']]
             for i in range(feedback_times):
-                conversations = get_responses(conversations) # get CF responses
+                conversations = get_responses(
+                    conversations,
+                    llm_model = args.llm_model
+                ) # get CF responses
                 print('Sample conversation for ' + str(i) + ' feedback' + ':\n', conversations[0])
                 CF_text = get_CF_text(conversations)
                 for _ in range(train_steps_in_one_feedback):

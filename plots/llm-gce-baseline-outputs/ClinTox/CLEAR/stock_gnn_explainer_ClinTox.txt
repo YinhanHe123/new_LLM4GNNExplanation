@@ -1,0 +1,17 @@
+
+    validities: [100.0, 100.0, 100.0]
+    validity mean and std: (100.0, 0.0)
+
+    chemical validities: [0.0, 4.0, 0.0]
+    chemical validity mean and std: (1.3333333333333333, 1.8856180831641267)
+
+    proximities: [149.4062559633365, 151.75777031085346, 150.33376071253133]
+    proximity mean and std: (150.4992623289071, 0.9671084118518051)
+
+    chemical proximities: [-1, 152.30956469070583, -1]
+    chemical proximity mean and std: (50.103188230235276, 72.27082187570386)
+
+    total number of counterfacutals produced per experiment: [25, 25, 25]
+
+    time: [3.337870717048645, 3.262305235862732, 3.3503784775733947, 3.3503797888755797]
+    
