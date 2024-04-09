@@ -40,7 +40,7 @@ def get_responses(
             )
             response = response.choices[0].message.content
         else:
-            inputs = tokenizer.encode("\n".join([f'{msg['role']}: {msg['content']}' for msg in messages]), return_tensors="pt")
+            inputs = tokenizer.encode("\n".join([msg['role'] + ': ' + msg['content'] for msg in messages]), return_tensors="pt")
             response = model.generate(inputs, max_length=100, temperature=0.2, pad_token_id=tokenizer.eos_token_id)
             response = tokenizer.decode(response[0], skip_special_tokens=True)
         conversation.mark_processed()

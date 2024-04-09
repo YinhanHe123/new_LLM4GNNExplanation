@@ -83,11 +83,15 @@ def llm_gce(args, dataset, gnn, exp_num):
             args=args,
             graph_emb_dim=args.gnn_embedding_dim,
             max_num_nodes=dataset.max_num_nodes,
+            llm_model=args.llm_model,
         ).to(args.device)
     
     # pretrain
     if args.ablation_type != "np":
-        pretrain_lm_path = './saved_models/lm_'+args.dataset + '_eplr_' + str(args.exp_pretrain_lr) + '_eplw' + str(args.exp_pretrain_weight_decay) + '_epe_'+ str(args.exp_pretrain_epochs) + '.pth'
+        if args.encoder_model == 'Bert':
+            pretrain_lm_path = './saved_models/lm_'+args.dataset + '_eplr_' + str(args.exp_pretrain_lr) + '_eplw' + str(args.exp_pretrain_weight_decay) + '_epe_'+ str(args.exp_pretrain_epochs) + '.pth'
+        else:
+            pretrain_lm_path = './saved_models/'+args.encoder_model+'_'+args.dataset + '_eplr_' + str(args.exp_pretrain_lr) + '_eplw' + str(args.exp_pretrain_weight_decay) + '_epe_'+ str(args.exp_pretrain_epochs) + '_'+ args.encoder_model + '.pth'
         if os.path.isfile(pretrain_lm_path):
             print('----------------------Loading Pretrained LM----------------------\n')
             pretrain_state_dict = torch.load(pretrain_lm_path, map_location=args.device)
@@ -141,6 +145,8 @@ def main():
          f'pretrain_lr_{args.exp_pretrain_lr}_'
          f'pretrained_epochs_{args.exp_pretrain_epochs}_'
          f'pretrained_weight_decay_{args.exp_pretrain_weight_decay}_'
+         f'm_mu_{args.m_mu}'
+         f'c_mu_{args.c_mu}'
          f'train_lr_{args.exp_train_lr}_'
          f'train_epochs_{args.exp_train_epochs}_'
          f'train_weight_decay_{args.exp_train_weight_decay}_'

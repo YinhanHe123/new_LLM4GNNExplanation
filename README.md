@@ -34,3 +34,22 @@ The dependencies needed to run the code can be installed using
 ```shell
 pip install -r requirements.txt
 ```
+
+## Complementary Experiment Results
+
+### (1) (R1, R2, R5) Model efficiency and scalability evaluation.
+
+### (2) (R1) More case studies should be done.
+
+### (3) (R1) Parameter sensitivity of $\alpha$ and $\beta$.
+
+|         | 5 | 2 | 1 | 0.5 | 0.2 |
+|---------|---|---|---|-----|-----|
+| AIDS    |   |   |   |     |     |
+| Clintox |   |   |   |     |     |
+
+### (4) (R2) LLM can be hard to generalize to graphs other than molecules. 
+
+### (5) (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
+
+### (6) (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
