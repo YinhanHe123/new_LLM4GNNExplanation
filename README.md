@@ -39,6 +39,16 @@ pip install -r requirements.txt
 
 ### (1) (R1, R2, R5) Model efficiency and scalability evaluation.
 
+Below are runtime metrics for training for 100 epochs and generating counterfactual graphs for AIDS and ClinTox. The metrics are in seconds. All of these experiments were conducted on a compute cluster on a single Nvidia RTX 2080 Ti and two 18-core Intel processors.
+|         | AIDS | ClinTox | 
+|---------|------|---------|
+| GNN_Explainer    | 454.66  | 37.75  |
+| CF_GNNExplainer |  1272.21 | 95.46  |   
+| RegExplainer | 1385.05  | 99.91  |   
+| CLEAR        | 908.70  | 398.91  |
+
+Here, we see that GNN_Explainer is the fastest baseline with CLEAR and RegExplainer trading places as the slowest baselines between AIDS and ClinTox.
+
 ### (2) (R1) More case studies should be done.
 
 ### (3) (R1) Parameter sensitivity of $\alpha$ and $\beta$.
