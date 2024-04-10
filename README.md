@@ -54,19 +54,19 @@ Here, we see that GNN_Explainer is the fastest baseline with CLEAR and RegExplai
 We strengthen our claims regarding LLM-GCE's more feasible counterfactuals with another example from BBBP. Below, we compare CF_GNNExplainer with LLM-GCE on molecule 273 from BBP.
 |![original_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/original_mol.png) | ![our_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/our_mol.png) | ![baseline_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/baseline_mol.png)
 |:--:|:--:|:--:|
-| *Original molecule* | *CF_GNNExplainer's output* | *LLM-GCE's output* |
+| *Original molecule* | *LLM-GCE's output* | *CF_GNNExplainer's output* |
 
 We see that LLM-GCE is successfully able to produce a counterfactual with minimal changes to the original input, compared to CF_GNNExplainer, which removes a large portion of the original molecule. Notice the subtle removal of part of one of the side chains. Further, LLM-GCE's output has a superior proximity of 19.26 versus CF_GNNExplainer's 24.76.
 
 In addition, we inspect the generated smiles for various invalid smiles from baseline outputs and compare with outputs from LLM-GCE. Below, we show an example of molecule 450 from AIDS.
-| `CSC1OC(C)(C)OC1=O` | `[AsH3].[As]#B[AsH]#Cl12(=[AsH])#[As](=[As]1)=[AsH]=2` | `O=COCCSC1OC1` |
+| `CSC1OC(C)(C)OC1=O` | `O=COCCSC1OC1`  |  `[AsH3].[As]#B[AsH]#Cl12(=[AsH])#[As](=[As]1)=[AsH]=2` |
 |:--:|:--:|:--:|
-| *Original SMILES* | *CLEAR's SMILES* | *LLM-GCE's SMILES* |
+| *Original SMILES* |  *LLM-GCE's SMILES*  | *CLEAR's SMILES* |
 
 LLM-GCE's SMILES output passes RDKit's valence theory validity checks, while CLEAR struggles to produce a SMILES string which is chemically feasible. Next, we show an example of a failure case of LLM-GCE, but which still demonstrates improvement. Below are the SMILES strings for molecule 1737 from Tox21.
-| `c1ccc2cc(CC3=NCCN3)ccc2c1` | `C=CC.C=CC.CCC.O=CO` | `OClSNCCCNCCNCCNCCN` |
+| `c1ccc2cc(CC3=NCCN3)ccc2c1` | `OClSNCCCNCCNCCNCCN` | `C=CC.C=CC.CCC.O=CO`|
 |:--:|:--:|:--:|
-| *Original SMILES* | *CF_GNNExplainer's SMILES* | *LLM-GCE's SMILES* |
+| *Original SMILES* | *LLM-GCE's SMILES*  | *CF_GNNExplainer's SMILES* |
 
 In this example, we see that, while LLM-GCE is unable to construct a valid counterfactual, and it indeed hallucinates a sulfur and oxygen atom, its generated molecule is an improvement over CF_GNNExplainer, adding nitrogen atoms and refraining from hallucinated double bonds.
 
