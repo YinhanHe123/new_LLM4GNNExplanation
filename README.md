@@ -56,7 +56,7 @@ We strengthen our claims regarding LLM-GCE's more feasible counterfactuals with 
 |:--:|:--:|:--:|
 | *Original molecule* | *CF_GNNExplainer's output* | *LLM-GCE's output* |
 
-We see that LLM-GCE is successfully able to produce a counterfactual with minimal changes to the original input, compared to CF_GNNExplainer, which removes a large portion of the original molecule. Further, LLM-GCE's output has a superior proximity of 19.26 versus CF_GNNExplainer's 24.76.
+We see that LLM-GCE is successfully able to produce a counterfactual with minimal changes to the original input, compared to CF_GNNExplainer, which removes a large portion of the original molecule. Notice the subtle removal of part of one of the side chains. Further, LLM-GCE's output has a superior proximity of 19.26 versus CF_GNNExplainer's 24.76.
 
 In addition, we inspect the generated smiles for various invalid smiles from baseline outputs and compare with outputs from LLM-GCE. Below, we show an example of molecule 450 from AIDS.
 | `CSC1OC(C)(C)OC1=O` | `[AsH3].[As]#B[AsH]#Cl12(=[AsH])#[As](=[As]1)=[AsH]=2` | `O=COCCSC1OC1` |
