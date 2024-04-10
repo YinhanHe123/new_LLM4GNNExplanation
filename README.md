@@ -94,7 +94,22 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
 ### (5) (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
 
 ### (6) (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
-Unfortunately, the majority of current domain-specific models in this field, such as ChemGPT and MolGen, are solely trained for SMILES completion. As a result, they are not equipped to accurately process our prompts. A case is shown in follows:
+#### Different auto-encoder
+We conduct extensive experiments regarding different language models as auto-encoders on the Clintox and Aids datasets. The language models are employed through Huggingface library. 
++ Aids
+  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
+  |---------|------|---------|------|---------|
+  | `bert-base-uncased`   |  $0.13\pm0.18$ | $56.19\pm80.9$  | $100.0\pm0.0$  |  $2187.77\pm456.06$ |
+  | `microsoft/deberta-base` |  $0.0\pm0.0$ |  na |   $100.0\pm0.0$  | $925.73\pm874.3$  |  
+  | `google/electra-base-discriminator` | $0.35\pm0.44$  | $7.23\pm10.60$  | $100.0\pm0.0$  |  $1498.87\pm827.77$ |  
++ Clintox 
+  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. | 
+  |---------|------|---------|------|---------|
+  | `bert-base-uncased`   | $2.50\pm3.33$  | $18.06\pm29.34$  | $100.0\pm0.0$  | $1692.24 \pm 139.40$ |
+  | `microsoft/deberta-base` |  $0.83\pm1.66$ |  $0.28\pm2.56$ |   $100.0\pm0.0$  | $1527.77\pm47.68$  |  
+  | `google/electra-base-discriminator` |  $2.50\pm2.04$ | $25.45\pm30.00$  | $100.0\pm0.0$   |  $1568.47\pm52.41$ | 
+#### Different LLMs for prompt provider
+Unfortunately, the majority of current domain-specific models in this field, such as ChemGPT and MolGen, are solely trained for SMILES completion. As a result, they are not equipped to accurately process our prompts. A case is shown as follows:
 ```bash=
 # Input
 User: In CN1CCC(CC1)CNC2=NN3C(=NC=C3C4=CC(=CC=C4)OC(F)(F)F)C=C2, amine may be the most influential for failing clinical trials for toxicity reasons; what can we change amine to to increase the likelihood of it being causing toxicity in clinical trials? Please find the best substitution functional group for amine that can replace the "__" in the last sentence (shown below within " "). DO NOT reply with more than 3 words. Reply ONLY the substitution function group. "This molecule contains __, amide, aromatic, and ether functional groups, in which __ may be the most influential for failing clinical trials for toxicity reasons."
