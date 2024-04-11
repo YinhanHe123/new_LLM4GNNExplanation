@@ -1,5 +1,4 @@
 from math import ceil
-from symbol import atom
 import time
 from typing import List
 from tqdm import tqdm

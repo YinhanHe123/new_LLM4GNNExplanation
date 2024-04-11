@@ -141,12 +141,12 @@ def main():
  
     # Define the file paths
     args_list = (
-         f'{args.dataset}_'
+         f'{args.dataset}/'
          f'pretrain_lr_{args.exp_pretrain_lr}_'
          f'pretrained_epochs_{args.exp_pretrain_epochs}_'
          f'pretrained_weight_decay_{args.exp_pretrain_weight_decay}_'
-         f'm_mu_{args.m_mu}'
-         f'c_mu_{args.c_mu}'
+         f'm_mu_{args.exp_m_mu}'
+         f'c_mu_{args.exp_c_mu}'
          f'train_lr_{args.exp_train_lr}_'
          f'train_epochs_{args.exp_train_epochs}_'
          f'train_weight_decay_{args.exp_train_weight_decay}_'
@@ -156,7 +156,7 @@ def main():
          f'encoder_{args.encoder_model}_',
          f'llm_{args.llm_model}_',
          )
-    save_file_path = f'./exp_results/{args_list}.csv' if args.ablation_type == None else f'./exp_results/ablation/{args.ablation_type}_{args_list}.csv'
+    save_file_path = f'./exp_results/{args_list}.csv' if args.ablation_type == None else f'./exp_results/ablation/{args.ablation_type}/{args_list}.csv'
     
     start = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     # Mark the beginning of the experiments
