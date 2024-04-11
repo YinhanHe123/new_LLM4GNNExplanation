@@ -84,11 +84,22 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
 
 ### (3) (R1) Parameter sensitivity of $\alpha$ and $\beta$.
 
-|         | 5 | 2 | 1 | 0.5 | 0.2 |
-|---------|---|---|---|-----|-----|
-| AIDS    |   |   |   |     |     |
-| Clintox |   |   |   |     |     |
-
++ Aids
+  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
+  |---------|------|---------|------|---------|
+  | 5   |   |   |   |   |
+  | 2   |   |   |   |   |  
+  | 1   |   |   |   |   |  
+  | 0.5 |   |   |   |   | 
+  | 0.5 |   |   |   |   | 
++ Clintox
+  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
+  |---------|------|---------|------|---------|
+  | 5   |  $0.83\pm1.67$ | $16.98\pm35.96$  | $100\pm0.0$  | $1539.60 \pm 35.55$  |
+  | 2   | $0.83\pm1.67$  |  $4.18\pm10.36$ |  $100\pm0.0$ |  $1523.05 \pm 35.44$ |  
+  | 1   |  $0.83\pm1.67$  | $14.54\pm31.08$  |  $100\pm0.0$ |  $1532.47 \pm 35.72$ |  
+  | 0.5 | $0.00\pm0.00$  |  na | $100\pm0.0$  | $1532.16 \pm 35.72$  | 
+  | 0.5 | $1.66\pm2.04$  | $26.15\pm33.57$  |  $100\pm0.0$ | $1531.08 \pm 31.23$  | 
 ### (4) (R2) LLM can be hard to generalize to graphs other than molecules. 
 
 ### (5) (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
