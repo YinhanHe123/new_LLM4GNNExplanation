@@ -85,7 +85,7 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
 ### (3) (R1) Parameter sensitivity of $\alpha$ and $\beta$.
 
 + Aids
-  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
+  | $\beta/\alpha$  | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
   |---------|------|---------|------|---------|
   | 5   |   |   |   |   |
   | 2   |   |   |   |   |  
@@ -93,7 +93,7 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
   | 0.5 |   |   |   |   | 
   | 0.2 |   |   |   |   | 
 + Clintox
-  |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
+  | $\beta/\alpha$ | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
   |---------|------|---------|------|---------|
   | 5   |  $0.83\pm1.67$ | $16.98\pm35.96$  | $100\pm0.0$  | $1539.60 \pm 35.55$  |
   | 2   | $0.83\pm1.67$  |  $4.18\pm10.36$ |  $100\pm0.0$ |  $1523.05 \pm 35.44$ |  
