@@ -39,16 +39,16 @@ pip install -r requirements.txt
 
 ### (1) (R1, R2, R5) Model efficiency and scalability evaluation.
 #### Efficiency
-Below are runtime metrics for training for 100 epochs and generating counterfactual graphs for AIDS and ClinTox. The metrics are in seconds. All of the baseline experiments were conducted on a compute cluster on a single Nvidia RTX 2080 Ti and two 18-core Intel processors. We conducted an efficiency study of our method (LLM-GCE) on a compute server equipped with 6 RTX A6000 GPUs. The reported result represents the average of five separate experiments.
+Below are runtime metrics for training for 250 epochs and generating counterfactual graphs for AIDS and ClinTox. The metrics are in seconds. All of the experiments were conducted on a single Nvidia RTX A6000 serially on a server equipped with 512GB RAM and dual AMD EPYC 7543 32-core CPUs. The reported result represents the average of five separate experiments.
 |         | AIDS | ClinTox | 
 |---------|------|---------|
-| GNN_Explainer    | 454.66  | 37.75  |
-| CF_GNNExplainer |  1272.21 | 95.46  |   
-| RegExplainer | 1385.05  | 99.91  |   
-| CLEAR        | 908.70  | 398.91  |
+| GNN_Explainer    | 1112.28  | 80.13  |
+| CF_GNNExplainer |  2878.85 | 215.40  |   
+| RegExplainer | 3457.97  | 201.26  |   
+| CLEAR        | 1061.05  | 250.24  |
 | LLM-GCE      | 7925.60 | 3441.08 |
 
-Here, we see that GNN_Explainer is the fastest baseline with CLEAR and RegExplainer trading places as the slowest baselines between AIDS and ClinTox.
+Here, we see that GNN_Explainer is one of the faster baselines between the two datasets with RegExplainer being the slowest for AIDS. LLM-GCE is the slowest method compared to the baselines.
 
 #### Scalability
 We further evaluate our method on the Peptides-func dataset from [LRGB](https://github.com/vijaydwivedi75/lrgb). The Peptides-func dataset has an average node count of 150.94, significantly higher than the average node numbers in the five datasets evaluated in our paper, which range from 15.69 to 27.74. To adapt to a binary classification task, we only consider the fifth label type (antiviral) from the original multi-labeled dataset.
