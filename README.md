@@ -139,4 +139,14 @@ We will test these models by direcly generating smiles, and test other general L
   |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. | 
   |---------|------|---------|------|---------|
   | `GPT-4` | $2.50\pm3.33  |  $18.05 \pm 34.98$ |  $100.0\pm0.0$ | $1516.92 ± 52.93 |
-  | `Llama-2 7B` |   |   |   |   | 
+  | `Llama-2 7B` |   |   |   |   |
+
+## Model Description
+### Text Encoder Contrastive Pretraining
+Here, we provide a detailed illustration of the contrastive pretraining phase, as depicted in the second box of Figure 3 in our paper.
+![image](https://github.com/YinhanHe123/new_LLM4GNNExplanation/assets/44119778/25e346bc-22fc-446d-ae8e-caca1fc92eca)
+#### Intuition
+The purpose of this contrastive pretraining phase is to align the graph modality and the text modality within the same embedding space. Specificly, given a graph $G_i$, we generate the corresponding text attribute as the text pair $TP_i$ of $G_i$. Our target is to minimize the distance between the embeddings of $G_i$ and $TP_i$:
+$$\min_\phi ||\text{GT-GNN}(G_i)-\phi(TP_i)||,$$ 
+where GT-GNN is the ground-truth GNN, and $\phi$ represents the parameters of the Bert text encoder. 
+
