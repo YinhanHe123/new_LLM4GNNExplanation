@@ -1,13 +1,13 @@
 # LLM4GNNExplanation
 Using LLMs to guide GNN Counterfactual Explanation
 
-## How to run
+## 1 How to run
 Add an OpenAI api key in utils/pre_defined.py and run
 ```bash
 python main.py
 ```
 
-## Directory Layout
+## 2 Directory Layout
 ```bash
 ./data                          # Datasets used in the paper            
 |---- AIDS/
@@ -29,16 +29,16 @@ python main.py
 |----smiles.py                  # Functions to convert graph data to and from SMILES representation
 ```
 
-## Environments
+## 4 Environments
 The dependencies needed to run the code can be installed using
 ```shell
 pip install -r requirements.txt
 ```
 
-## Complementary Experiment Results
+## 5 Complementary Experiment Results
 
-### (1) (R1, R2, R5) Model efficiency and scalability evaluation.
-#### Efficiency
+### 5.1 (R1, R2, R5) Model efficiency and scalability evaluation.
+#### 5.1.1 Efficiency
 Below are runtime metrics for training for 250 epochs and generating counterfactual graphs for AIDS and ClinTox. The metrics are in seconds. All of the experiments were conducted on a single Nvidia RTX A6000 serially on a server equipped with 512GB RAM and dual AMD EPYC 7543 32-core CPUs. The reported result represents the average of five separate experiments.
 |         | AIDS | ClinTox | 
 |---------|------|---------|
@@ -50,7 +50,7 @@ Below are runtime metrics for training for 250 epochs and generating counterfact
 
 Here, we see that GNN_Explainer is one of the faster baselines between the two datasets with RegExplainer being the slowest for AIDS. LLM-GCE is the slowest method compared to the baselines.
 
-#### Scalability
+#### 5.1.2 Scalability
 We further evaluate our method on the Peptides-func dataset from [LRGB](https://github.com/vijaydwivedi75/lrgb). The Peptides-func dataset has an average node count of 150.94, significantly higher than the average node numbers in the five datasets evaluated in our paper, which range from 15.69 to 27.74. To adapt to a binary classification task, we only consider the fifth label type (antiviral) from the original multi-labeled dataset.
 |         | Proximity | Validity | 
 |---------|------|---------|
@@ -60,7 +60,7 @@ We further evaluate our method on the Peptides-func dataset from [LRGB](https://
 | CLEAR        |   |   |
 | LLM-GCE      |  |  |
 
-### (2) (R1) More case studies should be done.
+### 5.2 (R1) More case studies should be done.
 
 We strengthen our claims regarding LLM-GCE's more feasible counterfactuals with another example from BBBP. Below, we compare CF_GNNExplainer with LLM-GCE on molecule 273 from BBP.
 |![original_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/original_mol.png) | ![our_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/our_mol.png) | ![baseline_mol](https://github.com/YinhanHe123/new_LLM4GNNExplanation/blob/main/baseline_mol.png)
@@ -82,7 +82,7 @@ LLM-GCE's SMILES output passes RDKit's valence theory validity checks, while CLE
 In this example, we see that, while LLM-GCE is unable to construct a valid counterfactual, and it indeed hallucinates a sulfur and oxygen atom, its generated molecule is an improvement over CF_GNNExplainer, adding nitrogen atoms and refraining from hallucinated double bonds.
 
 
-### (3) (R1) Parameter sensitivity of $\alpha$ and $\beta$.
+### 5.3 (R1) Parameter sensitivity of $\alpha$ and $\beta$.
 
 + Aids
   | $\beta/\alpha$  | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
@@ -100,12 +100,12 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
   | 1   |  $0.83\pm1.67$  | $14.54\pm31.08$  |  $100\pm0.0$ |  $1532.47 \pm 35.72$ |  
   | 0.5 | $0.00\pm0.00$  |  na | $100\pm0.0$  | $1532.16 \pm 35.72$  | 
   | 0.2 | $1.66\pm2.04$  | $26.15\pm33.57$  |  $100\pm0.0$ | $1531.08 \pm 31.23$  | 
-### (4) (R2) LLM can be hard to generalize to graphs other than molecules. 
+### 5.4 (R2) LLM can be hard to generalize to graphs other than molecules. 
 
-### (5) (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
+### 5.5 (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
 
-### (6) (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
-#### Different auto-encoder
+### 5.6 (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
+#### 5.6.1 Different auto-encoder
 We conduct extensive experiments regarding different language models as auto-encoders on the Clintox and Aids datasets. The language models are employed through Huggingface library. 
 + Aids
   |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
@@ -119,7 +119,7 @@ We conduct extensive experiments regarding different language models as auto-enc
   | `bert-base-uncased`   | $2.50\pm3.33$  | $18.06\pm29.34$  | $100.0\pm0.0$  | $1692.24 \pm 139.40$ |
   | `microsoft/deberta-base` |  $0.83\pm1.66$ |  $0.28\pm2.56$ |   $100.0\pm0.0$  | $1527.77\pm47.68$  |  
   | `google/electra-base-discriminator` |  $2.50\pm2.04$ | $25.45\pm30.00$  | $100.0\pm0.0$   |  $1568.47\pm52.41$ | 
-#### Different LLMs for prompt provider
+#### 5.6.2 Different LLMs for prompt provider
 Unfortunately, the majority of current domain-specific models in this field, such as ChemGPT and MolGen, are solely trained for SMILES completion. As a result, they are not equipped to accurately process our prompts. A case is shown as follows:
 ```bash=
 # Input
@@ -138,20 +138,20 @@ We will test these models by direcly generating smiles, and test other general L
 + Clintox
   |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. | 
   |---------|------|---------|------|---------|
-  | `GPT-4` | $2.50\pm3.33  |  $18.05 \pm 34.98$ |  $100.0\pm0.0$ | $1516.92 ± 52.93 |
+  | `GPT-4` | $2.50\pm3.33$  |  $18.05 \pm 34.98$ |  $100.0\pm0.0$ | $1516.92 ± 52.93$ |
   | `Llama-2 7B` |   |   |   |   |
 
-## Model Description
-### Text Encoder Contrastive Pretraining
+## 6 Model Description
+### 6.1 Text Encoder Contrastive Pretraining
 Here, we provide a detailed illustration of the contrastive pretraining phase, as depicted in the second box of Figure 3 in our paper.
 ![image](https://github.com/YinhanHe123/new_LLM4GNNExplanation/assets/44119778/25e346bc-22fc-446d-ae8e-caca1fc92eca)
-#### Intuition
+#### 6.1.1 Intuition
 The purpose of this contrastive pretraining phase is to align the graph modality and the text modality within the same embedding space. Specifically, given a graph $G_i$, we generate the corresponding text attribute as the text pair $TP_i$ of $G_i$. Our target is to maximize the alignment between $G_i$ and $TP_i$ for all the $G_i$ in the dataset:
 $$\max_\phi P(G_i, TP_i)\text{, i.e. } \max_\phi \text{cosine-similarity}(\text{GT-GNN}(G_i), \phi(TP_i)),$$
 
 where $P(G_i, TP_j)$ denotes the probability score for a pair, $\phi$ represents the parameters of the Bert text encoder. 
 
-#### Contrastive Pretraining
+#### 6.1.2 Contrastive Pretraining
 During the pertaining, each batch of batch size $N$ consists of $N$ pairs of $(G_i, TP_i)$. We construct P/N samples within each randomly sampled batch:
 + Positive samples (pairs): the original pairs in the batch $\lbrace(G_i, TP_i)|0\leq i\leq N\rbrace$.
 + Negative samples (pairs): disordered (graph, text) pairs $\lbrace(G_i, TP_j)|0\leq i, j\leq N, i\neq j\rbrace$.
