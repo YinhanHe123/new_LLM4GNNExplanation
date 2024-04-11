@@ -87,11 +87,11 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
 + Aids
   | $\beta/\alpha$  | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
   |---------|------|---------|------|---------|
-  | 5   |   |   |   |   |
-  | 2   |   |   |   |   |  
-  | 1   |   |   |   |   |  
-  | 0.5 |   |   |   |   | 
-  | 0.2 |   |   |   |   | 
+  | 5   |  $0.0\pm0.0$ |  na | $100\pm0.0$  | $834.92 \pm 768.31$  |
+  | 2   | $0.0\pm0.0$ |  na |  $100\pm0.0$ | $1203.44 \pm 920.29$  |  
+  | 1   | $0.6\pm1.08$  | $7.56\pm10.49$  | $100\pm0.0$  |  $878.64 \pm 741.81$ |  
+  | 0.5 | $0.0\pm0.0$ |  na |  $100\pm0.0$ | $464.34 \pm 134.28$  | 
+  | 0.2 | $0.15\pm0.3$  | $4.37\pm10.74$  | $100\pm0.0$  |  $829.54 \pm 758.20$ | 
 + Clintox
   | $\beta/\alpha$ | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
   |---------|------|---------|------|---------|
