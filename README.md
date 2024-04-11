@@ -152,7 +152,7 @@ $$\max_\phi P(G_i, TP_i)\text{, i.e. } \max_\phi \text{cosine-similarity}(\text{
 where $P(G_i, TP_j)$ denotes the probability score for a pair, $\phi$ represents the parameters of the Bert text encoder. 
 
 #### Contrastive Pretraining
-During the pertaining, each batch of batch size $N$ consists of $N$ $(G_i, TP_i)$ pairs. We construct P/N samples within each randomly sampled batch:
+During the pertaining, each batch of batch size $N$ consists of $N$ pairs of $(G_i, TP_i)$. We construct P/N samples within each randomly sampled batch:
 + Positive samples (pairs): the original pairs in the batch $\lbrace(G_i, TP_i)|0\leq i\leq N\rbrace$.
 + Negative samples (pairs): disordered (graph, text) pairs $\lbrace(G_i, TP_j)|0\leq i, j\leq N, i\neq j\rbrace$.
 
