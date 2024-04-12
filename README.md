@@ -105,6 +105,13 @@ Here, we see that GNN_Explainer is one of the faster baselines between the two d
 #### 6.1.2 Scalability
 We further evaluate our method on the Peptides-func dataset from [LRGB](https://github.com/vijaydwivedi75/lrgb). The Peptides-func dataset has an average node count of 150.94, significantly higher than the average node numbers in the five datasets evaluated in our paper, which range from 15.69 to 27.74. To adapt to a binary classification task, we only consider the fifth label type (antiviral) from the original multi-labeled dataset. We will update the results as soon as possible.
 
+|      |  Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |
+|------|-----------|------------|--------------------|---------------------|
+| GNN_Explainer | $0.0 \pm 0.0$ | na | $0.0 \pm 0.0$ | na |
+| CF_GNNExplainer |  $0.0 \pm 0.0$ | na | $0.0 \pm 0.0$ | na |
+| RegExplainer |  $0.0 \pm 0.0$ | na | $0.0 \pm 0.0$ | na |
+| CLEAR | $0.0 \pm 0.0$ | na| 6.45 $\pm 6.34$ | 43.35 $\pm 31.43 |
+
 ### 6.2 (R1) More case studies should be done.
 
 We strengthen our claims regarding LLM-GCE's more feasible counterfactuals with another example from BBBP. Below, we compare CF_GNNExplainer with LLM-GCE on molecule 273 from BBP.
@@ -152,11 +159,11 @@ Below is a table of chemical validity and proximity scores for generating counte
 
 |      | Validity | Proximity |
 |------|--------------|------|
-| AIDS |    0        |   N/A |
-|Mutagenicity | 0 | N/A |
-| BBBP | 0 | N/A |
-| ClinTox | 0 | N/A |
-| Tox21 | 0 | N/A |
+| AIDS |    0        |  na |
+|Mutagenicity | 0 | na |
+| BBBP | 0 | na |
+| ClinTox | 0 | na |
+| Tox21 | 0 | na |
 
 ### 6.5 (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
 #### 6.5.1 Different auto-encoder
