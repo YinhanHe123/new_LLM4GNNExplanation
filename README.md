@@ -148,6 +148,16 @@ In this example, we see that, while LLM-GCE is unable to construct a valid count
 
 ### 6.4 (R2) Measure the performance of counterfactual explanation with solely GPT-4, i.e., SMILES in, SMILES out, calculate accuracy.
 
+Below is a table of chemical validity and proximity scores for generating counterfactuals using solely GPT-4.
+
+|      | Validity | Proximity |
+|------|--------------|------|
+| AIDS |    0        |   N/A |
+|Mutagenicity | 0 | N/A |
+| BBBP | 0 | N/A |
+| ClinTox | 0 | N/A |
+| Tox21 | 0 | N/A |
+
 ### 6.5 (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
 #### 6.5.1 Different auto-encoder
 We conduct extensive experiments regarding different language models as auto-encoders on the Clintox and Aids datasets. The language models are employed through Huggingface library. 
