@@ -103,14 +103,7 @@ Below are runtime metrics for training for 250 epochs and generating counterfact
 Here, we see that GNN_Explainer is one of the faster baselines between the two datasets with RegExplainer being the slowest for AIDS. LLM-GCE is the slowest method compared to the baselines.
 
 #### 6.1.2 Scalability
-We further evaluate our method on the Peptides-func dataset from [LRGB](https://github.com/vijaydwivedi75/lrgb). The Peptides-func dataset has an average node count of 150.94, significantly higher than the average node numbers in the five datasets evaluated in our paper, which range from 15.69 to 27.74. To adapt to a binary classification task, we only consider the fifth label type (antiviral) from the original multi-labeled dataset.
-|         | Proximity | Validity | 
-|---------|------|---------|
-| GNN_Explainer    |   |   |
-| CF_GNNExplainer |   |   |   
-| RegExplainer |   |   |   
-| CLEAR        |   |   |
-| LLM-GCE      |  |  |
+We further evaluate our method on the Peptides-func dataset from [LRGB](https://github.com/vijaydwivedi75/lrgb). The Peptides-func dataset has an average node count of 150.94, significantly higher than the average node numbers in the five datasets evaluated in our paper, which range from 15.69 to 27.74. To adapt to a binary classification task, we only consider the fifth label type (antiviral) from the original multi-labeled dataset. We will update the results as soon as possible.
 
 ### 6.2 (R1) More case studies should be done.
 
