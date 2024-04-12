@@ -303,10 +303,10 @@ for i, test_x in enumerate(tqdm(test_loader)):
             smiles_undesired.append(smiles[j])
 
     for k in range(len(smiles_undesired)): 
-        # try:
-        #     counterfactual_smiles_list = torch.load(f"./cf_smiles_{args.dataset}.pt")
-        # except:
-        counterfactual_smiles = generate_counterfactual_smiles(smiles_undesired[k], label_semantics[args.dataset])
+        try:
+            counterfactual_smiles = generate_counterfactual_smiles(smiles_undesired[k], label_semantics[args.dataset])
+        except:
+            continue
         counterfactual_smiles_list.append(counterfactual_smiles)
 
 torch.save(counterfactual_smiles_list, f"./cf_smiles_{args.dataset}.pt")
@@ -344,7 +344,7 @@ else:
     predictions = gnn(cf_graphs)['y_pred'].argmax(dim=1)
 
     # validity = sum(predictions) / len(counterfactual_smiles_list)
-    validity = sum(predictions) / len(counterfactual_smiles_list)
+    validity = sum(predictions) / len(smiles_undesired)
     proximity = compute_proximity(ori_graphs, cf_graphs)
 
     validity = validity.item()
