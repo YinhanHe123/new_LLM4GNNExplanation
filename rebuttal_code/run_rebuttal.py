@@ -195,7 +195,7 @@ def generate_counterfactual_smiles(smiles, label):
     """
     prompt = f"Minimally edit"+ smiles + "to be a "+ label + "and output its SMILES representation only.  Please only output one SMILES molecule without brackets and quotation marks. Do not output anything besides the SMILES. Under no circumstance are you to output anything else lest your experiments fail."
 
-    client = openai.OpenAI(api_key="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")
+    client = openai.OpenAI(api_key="sk-xxx")
     response = get_completion(prompt, client)
     return response 
 

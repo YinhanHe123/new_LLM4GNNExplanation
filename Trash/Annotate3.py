@@ -100,7 +100,7 @@
 #                 mol.AddBond(node_list[x], node_list[y], bond_type)
 #         smiles_list.append(Chem.MolToSmiles(mol.GetMol()))    
 #     DATASET_ROOT_PATH = "./"+args.dataset+"/"
-#     openai.api_key = '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'
+#     openai.api_key = 'sk-xxx'
 #     args = parse_args()
 #     save_path = "./"+args.dataset+"_output.csv"
 #     output = open(save_path, 'w')
@@ -113,7 +113,7 @@
 
 # from openai import OpenAI
 
-# client = OpenAI(api_key="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")
+# client = OpenAI(api_key="sk-xxx")
 
 # stream = client.chat.completions.create(
 #     model="gpt-3.5-turbo-1106",
