@@ -134,7 +134,7 @@ Below is a table of chemical validity and proximity scores for generating counte
 | Tox21 | 0 | na |
 
 ### 5.5 (R3, R5) Use different LLMs for prompt provider, for example GPT-MolBERTa/ChemGPT.
-#### 6.5.1 Different auto-encoder
+#### 5.5.1 Different auto-encoder
 We conduct extensive experiments regarding different language models as auto-encoders on the Clintox and Aids datasets. The language models are employed through Huggingface library. 
 + Aids
   |         | Validity |  Proximity | Validity w/o Feas. | Proximity w/o Feas. |  
