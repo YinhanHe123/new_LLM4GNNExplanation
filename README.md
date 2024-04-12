@@ -39,7 +39,6 @@ pip install -r requirements.txt
 ## 4 Model Description
 ### 4.1 Text Encoder Contrastive Pretraining
 Here, we provide a detailed illustration of the contrastive pretraining phase, as depicted in the second box of Figure 3 in our paper.
-![image](https://github.com/YinhanHe123/new_LLM4GNNExplanation/assets/44119778/25e346bc-22fc-446d-ae8e-caca1fc92eca)
 #### 4.1.1 Intuition
 The purpose of this contrastive pretraining phase is to align the graph modality and the text modality within the same embedding space. Specifically, given a graph $G_i$, we generate the corresponding text attribute as the text pair $TP_i$ of $G_i$. Our target is to maximize the alignment between $G_i$ and $TP_i$ for all the $G_i$ in the dataset:
 $$\max_\phi P(G_i, TP_i)\text{, i.e. } \max_\phi \text{cosine-similarity}(\text{GT-GNN}(G_i), \phi(TP_i)),$$
@@ -52,7 +51,7 @@ During the pertaining, each batch of batch size $N$ consists of $N$ pairs of $(G
 + Negative samples (pairs): disordered (graph, text) pairs $\lbrace(G_i, TP_j)|0\leq i, j\leq N, i\neq j\rbrace$.
 
 Intuitively we want to increase the alignment of positive pairs and decrease the alignment of negative pairs. Thus, the contrastive pretraining loss becomes:
-$$\mathcal{L}{\text{contr}}=\Sigma_{i\neq j}{\log{P(G_i, TP_j)}} - \Sigma_{k=1}^N\log{P(G_k, TP_k)}.$$
+$\mathcal{L}{\text{contr}}=\Sigma_{i\neq j}{\log{P(G_i, TP_j)}} - \Sigma_{k=1}^N\log{P(G_k, TP_k)}.$
 
 
 ## 5 Complementary Experiment Results
