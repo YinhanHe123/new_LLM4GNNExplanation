@@ -1,9 +1,0 @@
-validity: [0, 0, 0]
-validity mean and std: ('0.0', '0.0')
-number of valid counterfactuals: 0
-chemical validity mean and std: ('0.0', '0.0')
-proximity: [0, 0, 0]
-number of chemically valid counterfactuals: 0
-proximity mean and std: ('0.0', '0.0')
-chemical proximity mean and std: ('0.0', '0.0')
-time: [73.94409819841385, 70.09030814170838, 56.7202073097229, 56.72021282911301]

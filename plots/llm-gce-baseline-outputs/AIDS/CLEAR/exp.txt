@@ -1,5 +1,0 @@
-validity: [0, 0, 0]
-validity mean and std: ('0.0', '0.0')
-proximity: [0, 0, 0]
-proximity mean and std: ('0.0', '0.0')
-time: []
